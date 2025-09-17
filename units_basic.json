@@ -1,0 +1,3634 @@
+[
+  {
+    "definitionName": "armaak",
+    "displayName": "Archangel"
+  },
+  {
+    "definitionName": "armaap",
+    "displayName": "Advanced Aircraft Plant (armaap)"
+  },
+  {
+    "definitionName": "armhaapuw",
+    "displayName": "Advanced Aircraft Plant (armhaapuw)"
+  },
+  {
+    "definitionName": "coraap",
+    "displayName": "Advanced Aircraft Plant (coraap)"
+  },
+  {
+    "definitionName": "armaas",
+    "displayName": "Dragonslayer"
+  },
+  {
+    "definitionName": "armaca",
+    "displayName": "Advanced Construction Aircraft (Armada)"
+  },
+  {
+    "definitionName": "coraca",
+    "displayName": "Advanced Construction Aircraft (Cortex)"
+  },
+  {
+    "definitionName": "legaca",
+    "displayName": "Advanced Construction Aircraft (Legion)"
+  },
+  {
+    "definitionName": "armack",
+    "displayName": "Advanced Construction Bot (Armada)"
+  },
+  {
+    "definitionName": "corack",
+    "displayName": "Advanced Construction Bot (Cortex)"
+  },
+  {
+    "definitionName": "legack",
+    "displayName": "Advanced Construction Bot (Legion)"
+  },
+  {
+    "definitionName": "armacsub",
+    "displayName": "Advanced Construction Sub (Armada)"
+  },
+  {
+    "definitionName": "coracsub",
+    "displayName": "Advanced Construction Sub (Cortex)"
+  },
+  {
+    "definitionName": "armacv",
+    "displayName": "Advanced Construction Vehicle (Armada)"
+  },
+  {
+    "definitionName": "coracv",
+    "displayName": "Advanced Construction Vehicle (Cortex)"
+  },
+  {
+    "definitionName": "legacv",
+    "displayName": "Advanced Construction Vehicle (Legion)"
+  },
+  {
+    "definitionName": "armadvsol",
+    "displayName": "Advanced Solar Collector (Armada)"
+  },
+  {
+    "definitionName": "coradvsol",
+    "displayName": "Advanced Solar Collector (Cortex)"
+  },
+  {
+    "definitionName": "legadvsol",
+    "displayName": "Advanced Solar Collector (Legion)"
+  },
+  {
+    "definitionName": "armafus",
+    "displayName": "Advanced Fusion Reactor (Armada)"
+  },
+  {
+    "definitionName": "corafus",
+    "displayName": "Advanced Fusion Reactor (Cortex)"
+  },
+  {
+    "definitionName": "legafus",
+    "displayName": "Advanced Fusion Reactor (Legion)"
+  },
+  {
+    "definitionName": "armafust3",
+    "displayName": "Epic Fusion Reactor (Armada)"
+  },
+  {
+    "definitionName": "corafust3",
+    "displayName": "Epic Fusion Reactor (Cortex)"
+  },
+  {
+    "definitionName": "legafust3",
+    "displayName": "Epic Fusion Reactor (Legion)"
+  },
+  {
+    "definitionName": "armageo",
+    "displayName": "Advanced Geothermal Powerplant (armageo)"
+  },
+  {
+    "definitionName": "armuwageo",
+    "displayName": "Advanced Geothermal Powerplant (armuwageo)"
+  },
+  {
+    "definitionName": "corageo",
+    "displayName": "Advanced Geothermal Powerplant (corageo)"
+  },
+  {
+    "definitionName": "coruwageo",
+    "displayName": "Advanced Geothermal Powerplant (coruwageo)"
+  },
+  {
+    "definitionName": "legageo",
+    "displayName": "Advanced Geothermal Powerplant (legageo)"
+  },
+  {
+    "definitionName": "armah",
+    "displayName": "Sweeper"
+  },
+  {
+    "definitionName": "armalab",
+    "displayName": "Advanced Bot Lab (Armada)"
+  },
+  {
+    "definitionName": "coralab",
+    "displayName": "Advanced Bot Lab (Cortex)"
+  },
+  {
+    "definitionName": "armamb",
+    "displayName": "Rattlesnake"
+  },
+  {
+    "definitionName": "armamd",
+    "displayName": "Citadel"
+  },
+  {
+    "definitionName": "armamex",
+    "displayName": "Twilight"
+  },
+  {
+    "definitionName": "armamph",
+    "displayName": "Platypus"
+  },
+  {
+    "definitionName": "armamsub",
+    "displayName": "Amphibious Complex (armamsub)"
+  },
+  {
+    "definitionName": "coramsub",
+    "displayName": "Amphibious Complex (coramsub)"
+  },
+  {
+    "definitionName": "legamphlab",
+    "displayName": "Amphibious Complex (legamphlab)"
+  },
+  {
+    "definitionName": "armanac",
+    "displayName": "Crocodile"
+  },
+  {
+    "definitionName": "armanni",
+    "displayName": "Pulsar"
+  },
+  {
+    "definitionName": "armannit3",
+    "displayName": "Epic Pulsar"
+  },
+  {
+    "definitionName": "armantiship",
+    "displayName": "Haven (armantiship)"
+  },
+  {
+    "definitionName": "armcarry",
+    "displayName": "Haven (armcarry)"
+  },
+  {
+    "definitionName": "armap",
+    "displayName": "Aircraft Plant (Armada)"
+  },
+  {
+    "definitionName": "corap",
+    "displayName": "Aircraft Plant (Cortex)"
+  },
+  {
+    "definitionName": "armapt3",
+    "displayName": "Experimental Aircraft Plant (armapt3)"
+  },
+  {
+    "definitionName": "armhaap",
+    "displayName": "Experimental Aircraft Plant (armhaap)"
+  },
+  {
+    "definitionName": "corapt3",
+    "displayName": "Experimental Aircraft Plant (corapt3)"
+  },
+  {
+    "definitionName": "corhaap",
+    "displayName": "Experimental Aircraft Plant (corhaap)"
+  },
+  {
+    "definitionName": "corhaapuw",
+    "displayName": "Experimental Aircraft Plant (corhaapuw)"
+  },
+  {
+    "definitionName": "armarad",
+    "displayName": "Advanced Radar Tower (Armada)"
+  },
+  {
+    "definitionName": "corarad",
+    "displayName": "Advanced Radar Tower (Cortex)"
+  },
+  {
+    "definitionName": "legarad",
+    "displayName": "Advanced Radar Tower (Legion)"
+  },
+  {
+    "definitionName": "armart",
+    "displayName": "Shellshocker"
+  },
+  {
+    "definitionName": "armaser",
+    "displayName": "Smuggler"
+  },
+  {
+    "definitionName": "armason",
+    "displayName": "Advanced Sonar Station (Armada)"
+  },
+  {
+    "definitionName": "corason",
+    "displayName": "Advanced Sonar Station (Cortex)"
+  },
+  {
+    "definitionName": "armasp",
+    "displayName": "Air Repair Pad (armasp)"
+  },
+  {
+    "definitionName": "armfasp",
+    "displayName": "Air Repair Pad (armfasp)"
+  },
+  {
+    "definitionName": "corasp",
+    "displayName": "Air Repair Pad (corasp)"
+  },
+  {
+    "definitionName": "corfasp",
+    "displayName": "Air Repair Pad (corfasp)"
+  },
+  {
+    "definitionName": "armassimilator",
+    "displayName": "Assimilator"
+  },
+  {
+    "definitionName": "armassistdrone",
+    "displayName": "Assist Drone (Armada)"
+  },
+  {
+    "definitionName": "corassistdrone",
+    "displayName": "Assist Drone (Cortex)"
+  },
+  {
+    "definitionName": "legassistdrone",
+    "displayName": "Assist Drone (Legion)"
+  },
+  {
+    "definitionName": "armassistdrone_land",
+    "displayName": "Assist Vehicle (Armada)"
+  },
+  {
+    "definitionName": "corassistdrone_land",
+    "displayName": "Assist Vehicle (Cortex)"
+  },
+  {
+    "definitionName": "legassistdrone_land",
+    "displayName": "Assist Vehicle (Legion)"
+  },
+  {
+    "definitionName": "armasy",
+    "displayName": "Advanced Shipyard (Armada)"
+  },
+  {
+    "definitionName": "corasy",
+    "displayName": "Advanced Shipyard (Cortex)"
+  },
+  {
+    "definitionName": "armatl",
+    "displayName": "Moray"
+  },
+  {
+    "definitionName": "armatlas",
+    "displayName": "Stork"
+  },
+  {
+    "definitionName": "armavp",
+    "displayName": "Advanced Vehicle Plant (Armada)"
+  },
+  {
+    "definitionName": "coravp",
+    "displayName": "Advanced Vehicle Plant (Cortex)"
+  },
+  {
+    "definitionName": "legavp",
+    "displayName": "Advanced Vehicle Plant (Legion)"
+  },
+  {
+    "definitionName": "armawac",
+    "displayName": "Oracle"
+  },
+  {
+    "definitionName": "armbanth",
+    "displayName": "Titan"
+  },
+  {
+    "definitionName": "armbats",
+    "displayName": "Dreadnought"
+  },
+  {
+    "definitionName": "armbeamer",
+    "displayName": "Beamer"
+  },
+  {
+    "definitionName": "armbeaver",
+    "displayName": "Beaver"
+  },
+  {
+    "definitionName": "armblade",
+    "displayName": "Hornet"
+  },
+  {
+    "definitionName": "armbotrail",
+    "displayName": "Pawn Launcher"
+  },
+  {
+    "definitionName": "armbrawl",
+    "displayName": "Roughneck"
+  },
+  {
+    "definitionName": "armbrtha",
+    "displayName": "Basilica"
+  },
+  {
+    "definitionName": "armbull",
+    "displayName": "Bull"
+  },
+  {
+    "definitionName": "armca",
+    "displayName": "Construction Aircraft (Armada)"
+  },
+  {
+    "definitionName": "corca",
+    "displayName": "Construction Aircraft (Cortex)"
+  },
+  {
+    "definitionName": "armch",
+    "displayName": "Construction Hovercraft (Armada)"
+  },
+  {
+    "definitionName": "corch",
+    "displayName": "Construction Hovercraft (Cortex)"
+  },
+  {
+    "definitionName": "legch",
+    "displayName": "Construction Hovercraft (Legion)"
+  },
+  {
+    "definitionName": "armcir",
+    "displayName": "Chainsaw"
+  },
+  {
+    "definitionName": "armck",
+    "displayName": "Construction Bot (Armada)"
+  },
+  {
+    "definitionName": "corck",
+    "displayName": "Construction Bot (Cortex)"
+  },
+  {
+    "definitionName": "armckfus",
+    "displayName": "Cloakable Fusion Reactor"
+  },
+  {
+    "definitionName": "armclaw",
+    "displayName": "Dragon's Claw (armclaw)"
+  },
+  {
+    "definitionName": "corscavdtl",
+    "displayName": "Dragon's Claw (corscavdtl)"
+  },
+  {
+    "definitionName": "legdtl",
+    "displayName": "Dragon's Claw (legdtl)"
+  },
+  {
+    "definitionName": "armcom",
+    "displayName": "Armada Commander"
+  },
+  {
+    "definitionName": "armcomboss",
+    "displayName": "Epic Commander - Final Boss (armcomboss)"
+  },
+  {
+    "definitionName": "armscavengerbossv2",
+    "displayName": "Epic Commander - Final Boss (armscavengerbossv2)"
+  },
+  {
+    "definitionName": "corcomboss",
+    "displayName": "Epic Commander - Final Boss (corcomboss)"
+  },
+  {
+    "definitionName": "scavengerbossv4",
+    "displayName": "Epic Commander - Final Boss (scavengerbossv4)"
+  },
+  {
+    "definitionName": "armcomlvl10",
+    "displayName": "Armada Commander Level 10"
+  },
+  {
+    "definitionName": "armcomlvl2",
+    "displayName": "Armada Commander Level 2"
+  },
+  {
+    "definitionName": "armcomlvl3",
+    "displayName": "Armada Commander Level 3"
+  },
+  {
+    "definitionName": "armcomlvl4",
+    "displayName": "Armada Commander Level 4"
+  },
+  {
+    "definitionName": "armcomlvl5",
+    "displayName": "Armada Commander Level 5"
+  },
+  {
+    "definitionName": "armcomlvl6",
+    "displayName": "Armada Commander Level 6"
+  },
+  {
+    "definitionName": "armcomlvl7",
+    "displayName": "Armada Commander Level 7"
+  },
+  {
+    "definitionName": "armcomlvl8",
+    "displayName": "Armada Commander Level 8"
+  },
+  {
+    "definitionName": "armcomlvl9",
+    "displayName": "Armada Commander Level 9"
+  },
+  {
+    "definitionName": "armconsul",
+    "displayName": "Consul (armconsul)"
+  },
+  {
+    "definitionName": "armhacv",
+    "displayName": "Consul (armhacv)"
+  },
+  {
+    "definitionName": "armcroc",
+    "displayName": "Turtle"
+  },
+  {
+    "definitionName": "armcrus",
+    "displayName": "Paladin"
+  },
+  {
+    "definitionName": "armcs",
+    "displayName": "Construction Ship (Armada)"
+  },
+  {
+    "definitionName": "corcs",
+    "displayName": "Construction Ship (Cortex)"
+  },
+  {
+    "definitionName": "legcs",
+    "displayName": "Construction Ship (Legion)"
+  },
+  {
+    "definitionName": "armcsa",
+    "displayName": "Construction Seaplane (Armada)"
+  },
+  {
+    "definitionName": "corcsa",
+    "displayName": "Construction Seaplane (Cortex)"
+  },
+  {
+    "definitionName": "armcv",
+    "displayName": "Construction Vehicle (Armada)"
+  },
+  {
+    "definitionName": "corcv",
+    "displayName": "Construction Vehicle (Cortex)"
+  },
+  {
+    "definitionName": "armdecade",
+    "displayName": "Dolphin"
+  },
+  {
+    "definitionName": "armdecadet3",
+    "displayName": "Epic Dolphin"
+  },
+  {
+    "definitionName": "armdecom",
+    "displayName": "Commander (Armada)"
+  },
+  {
+    "definitionName": "cordecom",
+    "displayName": "Commander (Cortex)"
+  },
+  {
+    "definitionName": "armdf",
+    "displayName": "Decoy Fusion Reactor"
+  },
+  {
+    "definitionName": "armdfly",
+    "displayName": "Abductor"
+  },
+  {
+    "definitionName": "armdl",
+    "displayName": "Anemone"
+  },
+  {
+    "definitionName": "armdrag",
+    "displayName": "Dragon's Teeth (armdrag)"
+  },
+  {
+    "definitionName": "cordrag",
+    "displayName": "Dragon's Teeth (cordrag)"
+  },
+  {
+    "definitionName": "corscavdrag",
+    "displayName": "Dragon's Teeth (corscavdrag)"
+  },
+  {
+    "definitionName": "legdrag",
+    "displayName": "Dragon's Teeth (legdrag)"
+  },
+  {
+    "definitionName": "armdrone",
+    "displayName": "Attack Drone (armdrone)"
+  },
+  {
+    "definitionName": "armdroneold",
+    "displayName": "Attack Drone (armdroneold)"
+  },
+  {
+    "definitionName": "cordrone",
+    "displayName": "Attack Drone (cordrone)"
+  },
+  {
+    "definitionName": "cordroneold",
+    "displayName": "Attack Drone (cordroneold)"
+  },
+  {
+    "definitionName": "armdronecarry",
+    "displayName": "Nexus"
+  },
+  {
+    "definitionName": "armdronecarryland",
+    "displayName": "Nexus Terra"
+  },
+  {
+    "definitionName": "armemp",
+    "displayName": "Paralyzer"
+  },
+  {
+    "definitionName": "armepoch",
+    "displayName": "Epoch"
+  },
+  {
+    "definitionName": "armestor",
+    "displayName": "Energy Storage (Armada)"
+  },
+  {
+    "definitionName": "corestor",
+    "displayName": "Energy Storage (Cortex)"
+  },
+  {
+    "definitionName": "legestor",
+    "displayName": "Energy Storage (Legion)"
+  },
+  {
+    "definitionName": "armexcalibur",
+    "displayName": "Excalibur"
+  },
+  {
+    "definitionName": "armeyes",
+    "displayName": "Beholder (Armada)"
+  },
+  {
+    "definitionName": "coreyes",
+    "displayName": "Beholder (Cortex)"
+  },
+  {
+    "definitionName": "armfark",
+    "displayName": "Butler (armfark)"
+  },
+  {
+    "definitionName": "armhack",
+    "displayName": "Butler (armhack)"
+  },
+  {
+    "definitionName": "armfast",
+    "displayName": "Sprinter"
+  },
+  {
+    "definitionName": "armfatf",
+    "displayName": "Naval Pinpointer (Armada)"
+  },
+  {
+    "definitionName": "corfatf",
+    "displayName": "Naval Pinpointer (Cortex)"
+  },
+  {
+    "definitionName": "armfav",
+    "displayName": "Rover"
+  },
+  {
+    "definitionName": "armfboy",
+    "displayName": "Fatboy"
+  },
+  {
+    "definitionName": "armfdrag",
+    "displayName": "Shark's Teeth (Armada)"
+  },
+  {
+    "definitionName": "corfdrag",
+    "displayName": "Shark's Teeth (Cortex)"
+  },
+  {
+    "definitionName": "legfdrag",
+    "displayName": "Shark's Teeth (Legion)"
+  },
+  {
+    "definitionName": "armfepocht4",
+    "displayName": "Flying Epoch"
+  },
+  {
+    "definitionName": "armferret",
+    "displayName": "Ferret"
+  },
+  {
+    "definitionName": "armfflak",
+    "displayName": "Naval Arbalest"
+  },
+  {
+    "definitionName": "armfgate",
+    "displayName": "Aurora"
+  },
+  {
+    "definitionName": "armfhlt",
+    "displayName": "Manta"
+  },
+  {
+    "definitionName": "armfhp",
+    "displayName": "Naval Hovercraft Platform (Armada)"
+  },
+  {
+    "definitionName": "corfhp",
+    "displayName": "Naval Hovercraft Platform (Cortex)"
+  },
+  {
+    "definitionName": "armfido",
+    "displayName": "Hound"
+  },
+  {
+    "definitionName": "armfify",
+    "displayName": "Firefly"
+  },
+  {
+    "definitionName": "armfig",
+    "displayName": "Falcon"
+  },
+  {
+    "definitionName": "armflak",
+    "displayName": "Arbalest"
+  },
+  {
+    "definitionName": "armflash",
+    "displayName": "Blitz"
+  },
+  {
+    "definitionName": "armflea",
+    "displayName": "Tick"
+  },
+  {
+    "definitionName": "armfmine3",
+    "displayName": "Heavy Mine (armfmine3)"
+  },
+  {
+    "definitionName": "armmine3",
+    "displayName": "Heavy Mine (armmine3)"
+  },
+  {
+    "definitionName": "corfmine3",
+    "displayName": "Heavy Mine (corfmine3)"
+  },
+  {
+    "definitionName": "cormine3",
+    "displayName": "Heavy Mine (cormine3)"
+  },
+  {
+    "definitionName": "legmine3",
+    "displayName": "Heavy Mine (legmine3)"
+  },
+  {
+    "definitionName": "armfmkr",
+    "displayName": "Naval Energy Converter (armfmkr)"
+  },
+  {
+    "definitionName": "corfmkr",
+    "displayName": "Naval Energy Converter (corfmkr)"
+  },
+  {
+    "definitionName": "legfeconv",
+    "displayName": "Naval Energy Converter (legfeconv)"
+  },
+  {
+    "definitionName": "armfort",
+    "displayName": "Fortification Wall (armfort)"
+  },
+  {
+    "definitionName": "corfort",
+    "displayName": "Fortification Wall (corfort)"
+  },
+  {
+    "definitionName": "corscavfort",
+    "displayName": "Fortification Wall (corscavfort)"
+  },
+  {
+    "definitionName": "legforti",
+    "displayName": "Fortification Wall (legforti)"
+  },
+  {
+    "definitionName": "armfrad",
+    "displayName": "Naval Radar / Sonar Tower (Armada)"
+  },
+  {
+    "definitionName": "corfrad",
+    "displayName": "Naval Radar / Sonar Tower (Cortex)"
+  },
+  {
+    "definitionName": "legfrad",
+    "displayName": "Naval Radar / Sonar Tower (Legion)"
+  },
+  {
+    "definitionName": "armfrock",
+    "displayName": "Scumbag"
+  },
+  {
+    "definitionName": "armfrt",
+    "displayName": "Naval Nettle"
+  },
+  {
+    "definitionName": "armfus",
+    "displayName": "Fusion Reactor (Armada)"
+  },
+  {
+    "definitionName": "corfus",
+    "displayName": "Fusion Reactor (Cortex)"
+  },
+  {
+    "definitionName": "legfus",
+    "displayName": "Fusion Reactor (Legion)"
+  },
+  {
+    "definitionName": "armgate",
+    "displayName": "Keeper"
+  },
+  {
+    "definitionName": "armgatet3",
+    "displayName": "Asylum"
+  },
+  {
+    "definitionName": "armgeo",
+    "displayName": "Geothermal Powerplant (Armada)"
+  },
+  {
+    "definitionName": "corgeo",
+    "displayName": "Geothermal Powerplant (Cortex)"
+  },
+  {
+    "definitionName": "leggeo",
+    "displayName": "Geothermal Powerplant (Legion)"
+  },
+  {
+    "definitionName": "armgmm",
+    "displayName": "Prude"
+  },
+  {
+    "definitionName": "armgplat",
+    "displayName": "Gun Platform (Armada)"
+  },
+  {
+    "definitionName": "corgplat",
+    "displayName": "Gun Platform (Cortex)"
+  },
+  {
+    "definitionName": "armgremlin",
+    "displayName": "Gremlin"
+  },
+  {
+    "definitionName": "armguard",
+    "displayName": "Gauntlet"
+  },
+  {
+    "definitionName": "armhaca",
+    "displayName": "Experimental Construction Aircraft (Armada)"
+  },
+  {
+    "definitionName": "corhaca",
+    "displayName": "Experimental Construction Aircraft (Cortex)"
+  },
+  {
+    "definitionName": "armhacs",
+    "displayName": "Voyager (armhacs)"
+  },
+  {
+    "definitionName": "armmls",
+    "displayName": "Voyager (armmls)"
+  },
+  {
+    "definitionName": "armhalab",
+    "displayName": "Experimental Bot Lab (Armada)"
+  },
+  {
+    "definitionName": "leghalab",
+    "displayName": "Experimental Bot Lab (Legion)"
+  },
+  {
+    "definitionName": "armham",
+    "displayName": "Mace"
+  },
+  {
+    "definitionName": "armhasy",
+    "displayName": "Experimental Shipyard (Armada)"
+  },
+  {
+    "definitionName": "corhasy",
+    "displayName": "Experimental Shipyard (Cortex)"
+  },
+  {
+    "definitionName": "armhavp",
+    "displayName": "Experimental Vehicle Plant (Armada)"
+  },
+  {
+    "definitionName": "corhavp",
+    "displayName": "Experimental Vehicle Plant (Cortex)"
+  },
+  {
+    "definitionName": "leghavp",
+    "displayName": "Experimental Vehicle Plant (Legion)"
+  },
+  {
+    "definitionName": "armhawk",
+    "displayName": "Highwind"
+  },
+  {
+    "definitionName": "armhlt",
+    "displayName": "Overwatch"
+  },
+  {
+    "definitionName": "armhp",
+    "displayName": "Hovercraft Platform (Armada)"
+  },
+  {
+    "definitionName": "corhp",
+    "displayName": "Hovercraft Platform (Cortex)"
+  },
+  {
+    "definitionName": "leghp",
+    "displayName": "Hovercraft Platform (Legion)"
+  },
+  {
+    "definitionName": "armhvytrans",
+    "displayName": "Osprey"
+  },
+  {
+    "definitionName": "armjam",
+    "displayName": "Umbra"
+  },
+  {
+    "definitionName": "armjamt",
+    "displayName": "Sneaky Pete"
+  },
+  {
+    "definitionName": "armjanus",
+    "displayName": "Janus"
+  },
+  {
+    "definitionName": "armjeth",
+    "displayName": "Crossbow"
+  },
+  {
+    "definitionName": "armjuno",
+    "displayName": "Juno (Armada)"
+  },
+  {
+    "definitionName": "corjuno",
+    "displayName": "Juno (Cortex)"
+  },
+  {
+    "definitionName": "legjuno",
+    "displayName": "Juno (Legion)"
+  },
+  {
+    "definitionName": "armkam",
+    "displayName": "Banshee"
+  },
+  {
+    "definitionName": "armkraken",
+    "displayName": "Gorgon"
+  },
+  {
+    "definitionName": "armlab",
+    "displayName": "Bot Lab (Armada)"
+  },
+  {
+    "definitionName": "corlab",
+    "displayName": "Bot Lab (Cortex)"
+  },
+  {
+    "definitionName": "armlance",
+    "displayName": "Cormorant"
+  },
+  {
+    "definitionName": "armlatnk",
+    "displayName": "Jaguar"
+  },
+  {
+    "definitionName": "armliche",
+    "displayName": "Liche"
+  },
+  {
+    "definitionName": "armlichet4",
+    "displayName": "Epic Liche"
+  },
+  {
+    "definitionName": "armllt",
+    "displayName": "Sentry"
+  },
+  {
+    "definitionName": "armlship",
+    "displayName": "Maelstrom"
+  },
+  {
+    "definitionName": "armlun",
+    "displayName": "Lunkhead"
+  },
+  {
+    "definitionName": "armlunchbox",
+    "displayName": "Lunchbox"
+  },
+  {
+    "definitionName": "armlwall",
+    "displayName": "Dragon's Fury"
+  },
+  {
+    "definitionName": "armmakr",
+    "displayName": "Energy Converter (armmakr)"
+  },
+  {
+    "definitionName": "cormakr",
+    "displayName": "Energy Converter (cormakr)"
+  },
+  {
+    "definitionName": "legeconv",
+    "displayName": "Energy Converter (legeconv)"
+  },
+  {
+    "definitionName": "armmanni",
+    "displayName": "Starlight"
+  },
+  {
+    "definitionName": "armmar",
+    "displayName": "Marauder"
+  },
+  {
+    "definitionName": "armmark",
+    "displayName": "Compass"
+  },
+  {
+    "definitionName": "armmart",
+    "displayName": "Mauser"
+  },
+  {
+    "definitionName": "armmav",
+    "displayName": "Gunslinger"
+  },
+  {
+    "definitionName": "armmeatball",
+    "displayName": "Meatball"
+  },
+  {
+    "definitionName": "armmercury",
+    "displayName": "Mercury"
+  },
+  {
+    "definitionName": "armmerl",
+    "displayName": "Ambassador"
+  },
+  {
+    "definitionName": "armmex",
+    "displayName": "Metal Extractor (Armada)"
+  },
+  {
+    "definitionName": "cormex",
+    "displayName": "Metal Extractor (Cortex)"
+  },
+  {
+    "definitionName": "legmex",
+    "displayName": "Metal Extractor (Legion)"
+  },
+  {
+    "definitionName": "armmh",
+    "displayName": "Possum"
+  },
+  {
+    "definitionName": "armmine1",
+    "displayName": "Light Mine (Armada)"
+  },
+  {
+    "definitionName": "cormine1",
+    "displayName": "Light Mine (Cortex)"
+  },
+  {
+    "definitionName": "legmine1",
+    "displayName": "Light Mine (Legion)"
+  },
+  {
+    "definitionName": "armmine2",
+    "displayName": "Medium Mine (armmine2)"
+  },
+  {
+    "definitionName": "cormine2",
+    "displayName": "Medium Mine (cormine2)"
+  },
+  {
+    "definitionName": "cormine4",
+    "displayName": "Medium Mine (cormine4)"
+  },
+  {
+    "definitionName": "legmine2",
+    "displayName": "Medium Mine (legmine2)"
+  },
+  {
+    "definitionName": "armminivulc",
+    "displayName": "Mini Ragnarok"
+  },
+  {
+    "definitionName": "armmlv",
+    "displayName": "Groundhog"
+  },
+  {
+    "definitionName": "armmmkr",
+    "displayName": "Advanced Energy Converter (armmmkr)"
+  },
+  {
+    "definitionName": "cormmkr",
+    "displayName": "Advanced Energy Converter (cormmkr)"
+  },
+  {
+    "definitionName": "legadveconv",
+    "displayName": "Advanced Energy Converter (legadveconv)"
+  },
+  {
+    "definitionName": "armmmkrt3",
+    "displayName": "Epic Energy Converter (armmmkrt3)"
+  },
+  {
+    "definitionName": "cormmkrt3",
+    "displayName": "Epic Energy Converter (cormmkrt3)"
+  },
+  {
+    "definitionName": "legadveconvt3",
+    "displayName": "Epic Energy Converter (legadveconvt3)"
+  },
+  {
+    "definitionName": "armmoho",
+    "displayName": "Advanced Metal Extractor (Armada)"
+  },
+  {
+    "definitionName": "cormoho",
+    "displayName": "Advanced Metal Extractor (Cortex)"
+  },
+  {
+    "definitionName": "legmoho",
+    "displayName": "Advanced Metal Extractor (Legion)"
+  },
+  {
+    "definitionName": "armmship",
+    "displayName": "Longbow"
+  },
+  {
+    "definitionName": "armmstor",
+    "displayName": "Metal Storage (Armada)"
+  },
+  {
+    "definitionName": "cormstor",
+    "displayName": "Metal Storage (Cortex)"
+  },
+  {
+    "definitionName": "legmstor",
+    "displayName": "Metal Storage (Legion)"
+  },
+  {
+    "definitionName": "armnanotc",
+    "displayName": "Construction Turret (Armada)"
+  },
+  {
+    "definitionName": "cornanotc",
+    "displayName": "Construction Turret (Cortex)"
+  },
+  {
+    "definitionName": "legnanotc",
+    "displayName": "Construction Turret (Legion)"
+  },
+  {
+    "definitionName": "armnanotc2plat",
+    "displayName": "Advanced Construction Turret (armnanotc2plat)"
+  },
+  {
+    "definitionName": "armnanotct2",
+    "displayName": "Advanced Construction Turret (armnanotct2)"
+  },
+  {
+    "definitionName": "cornanotc2plat",
+    "displayName": "Advanced Construction Turret (cornanotc2plat)"
+  },
+  {
+    "definitionName": "cornanotct2",
+    "displayName": "Advanced Construction Turret (cornanotct2)"
+  },
+  {
+    "definitionName": "legnanotct2",
+    "displayName": "Advanced Construction Turret (legnanotct2)"
+  },
+  {
+    "definitionName": "legnanotct2plat",
+    "displayName": "Advanced Construction Turret (legnanotct2plat)"
+  },
+  {
+    "definitionName": "armnanotcplat",
+    "displayName": "Naval Construction Turret (Armada)"
+  },
+  {
+    "definitionName": "cornanotcplat",
+    "displayName": "Naval Construction Turret (Cortex)"
+  },
+  {
+    "definitionName": "legnanotcplat",
+    "displayName": "Naval Construction Turret (Legion)"
+  },
+  {
+    "definitionName": "armpb",
+    "displayName": "Pit Bull"
+  },
+  {
+    "definitionName": "armpeep",
+    "displayName": "Blink"
+  },
+  {
+    "definitionName": "armpincer",
+    "displayName": "Pincer"
+  },
+  {
+    "definitionName": "armplat",
+    "displayName": "Seaplane Platform (Armada)"
+  },
+  {
+    "definitionName": "corplat",
+    "displayName": "Seaplane Platform (Cortex)"
+  },
+  {
+    "definitionName": "armpnix",
+    "displayName": "Blizzard"
+  },
+  {
+    "definitionName": "armpship",
+    "displayName": "Ellysaw"
+  },
+  {
+    "definitionName": "armpshipt3",
+    "displayName": "Epic Ellysaw"
+  },
+  {
+    "definitionName": "armpt",
+    "displayName": "Skater"
+  },
+  {
+    "definitionName": "armptt2",
+    "displayName": "Epic Skater"
+  },
+  {
+    "definitionName": "armpw",
+    "displayName": "Pawn"
+  },
+  {
+    "definitionName": "armpwt4",
+    "displayName": "Epic Pawn"
+  },
+  {
+    "definitionName": "armrad",
+    "displayName": "Radar Tower (Armada)"
+  },
+  {
+    "definitionName": "corrad",
+    "displayName": "Radar Tower (Cortex)"
+  },
+  {
+    "definitionName": "legrad",
+    "displayName": "Radar Tower (Legion)"
+  },
+  {
+    "definitionName": "armrattet4",
+    "displayName": "Ratte"
+  },
+  {
+    "definitionName": "armraz",
+    "displayName": "Razorback"
+  },
+  {
+    "definitionName": "armrecl",
+    "displayName": "Grim Reaper"
+  },
+  {
+    "definitionName": "armrectr",
+    "displayName": "Lazarus"
+  },
+  {
+    "definitionName": "armrespawn",
+    "displayName": "Base Builder (armrespawn)"
+  },
+  {
+    "definitionName": "correspawn",
+    "displayName": "Base Builder (correspawn)"
+  },
+  {
+    "definitionName": "legnanotcbase",
+    "displayName": "Base Builder (legnanotcbase)"
+  },
+  {
+    "definitionName": "armrl",
+    "displayName": "Nettle"
+  },
+  {
+    "definitionName": "armrock",
+    "displayName": "Rocketeer"
+  },
+  {
+    "definitionName": "armroy",
+    "displayName": "Corsair"
+  },
+  {
+    "definitionName": "armsaber",
+    "displayName": "Sabre"
+  },
+  {
+    "definitionName": "armsam",
+    "displayName": "Whistler"
+  },
+  {
+    "definitionName": "armsat",
+    "displayName": "Satellite (Armada)"
+  },
+  {
+    "definitionName": "corsat",
+    "displayName": "Satellite (Cortex)"
+  },
+  {
+    "definitionName": "armsb",
+    "displayName": "Tsunami"
+  },
+  {
+    "definitionName": "armscab",
+    "displayName": "Umbrella"
+  },
+  {
+    "definitionName": "armsd",
+    "displayName": "Tracer"
+  },
+  {
+    "definitionName": "armseadragon",
+    "displayName": "Seadragon"
+  },
+  {
+    "definitionName": "armseap",
+    "displayName": "Puffin"
+  },
+  {
+    "definitionName": "armseer",
+    "displayName": "Prophet"
+  },
+  {
+    "definitionName": "armsehak",
+    "displayName": "Horizon"
+  },
+  {
+    "definitionName": "armserp",
+    "displayName": "Serpent"
+  },
+  {
+    "definitionName": "armserpt3",
+    "displayName": "Epic Serpent"
+  },
+  {
+    "definitionName": "armsfig",
+    "displayName": "Cyclone (armsfig)"
+  },
+  {
+    "definitionName": "armsfig2",
+    "displayName": "Cyclone (armsfig2)"
+  },
+  {
+    "definitionName": "armsh",
+    "displayName": "Seeker"
+  },
+  {
+    "definitionName": "armshltx",
+    "displayName": "Experimental Gantry (armshltx)"
+  },
+  {
+    "definitionName": "armshltxuw",
+    "displayName": "Experimental Gantry (armshltxuw)"
+  },
+  {
+    "definitionName": "corgant",
+    "displayName": "Experimental Gantry (corgant)"
+  },
+  {
+    "definitionName": "corgantuw",
+    "displayName": "Experimental Gantry (corgantuw)"
+  },
+  {
+    "definitionName": "leggant",
+    "displayName": "Experimental Gantry (leggant)"
+  },
+  {
+    "definitionName": "armshockwave",
+    "displayName": "Shockwave"
+  },
+  {
+    "definitionName": "armsilo",
+    "displayName": "Armageddon"
+  },
+  {
+    "definitionName": "armsjam",
+    "displayName": "Bermuda"
+  },
+  {
+    "definitionName": "armsnipe",
+    "displayName": "Sharpshooter"
+  },
+  {
+    "definitionName": "armsolar",
+    "displayName": "Solar Collector (Armada)"
+  },
+  {
+    "definitionName": "corsolar",
+    "displayName": "Solar Collector (Cortex)"
+  },
+  {
+    "definitionName": "legsolar",
+    "displayName": "Solar Collector (Legion)"
+  },
+  {
+    "definitionName": "armsonar",
+    "displayName": "Sonar Station (Armada)"
+  },
+  {
+    "definitionName": "corsonar",
+    "displayName": "Sonar Station (Cortex)"
+  },
+  {
+    "definitionName": "armspid",
+    "displayName": "Webber"
+  },
+  {
+    "definitionName": "armsptk",
+    "displayName": "Recluse"
+  },
+  {
+    "definitionName": "armsptkt4",
+    "displayName": "Epic Recluse"
+  },
+  {
+    "definitionName": "armspy",
+    "displayName": "Ghost"
+  },
+  {
+    "definitionName": "armstil",
+    "displayName": "Stiletto"
+  },
+  {
+    "definitionName": "armstump",
+    "displayName": "Stout"
+  },
+  {
+    "definitionName": "armsub",
+    "displayName": "Eel"
+  },
+  {
+    "definitionName": "armsubk",
+    "displayName": "Barracuda"
+  },
+  {
+    "definitionName": "armsy",
+    "displayName": "Shipyard (armsy)"
+  },
+  {
+    "definitionName": "corsy",
+    "displayName": "Shipyard (corsy)"
+  },
+  {
+    "definitionName": "legjim",
+    "displayName": "Shipyard (legjim)"
+  },
+  {
+    "definitionName": "armtarg",
+    "displayName": "Pinpointer (Armada)"
+  },
+  {
+    "definitionName": "cortarg",
+    "displayName": "Pinpointer (Cortex)"
+  },
+  {
+    "definitionName": "legtarg",
+    "displayName": "Pinpointer (Legion)"
+  },
+  {
+    "definitionName": "armtdrone",
+    "displayName": "Depth Charge Drone (Armada)"
+  },
+  {
+    "definitionName": "cortdrone",
+    "displayName": "Depth Charge Drone (Cortex)"
+  },
+  {
+    "definitionName": "armthor",
+    "displayName": "Thor"
+  },
+  {
+    "definitionName": "armthovr",
+    "displayName": "Bearer"
+  },
+  {
+    "definitionName": "armthund",
+    "displayName": "Stormbringer"
+  },
+  {
+    "definitionName": "armthundt4",
+    "displayName": "Epic Stormbringer"
+  },
+  {
+    "definitionName": "armtide",
+    "displayName": "Tidal Generator (Armada)"
+  },
+  {
+    "definitionName": "cortide",
+    "displayName": "Tidal Generator (Cortex)"
+  },
+  {
+    "definitionName": "legtide",
+    "displayName": "Tidal Generator (Legion)"
+  },
+  {
+    "definitionName": "armtl",
+    "displayName": "Harpoon"
+  },
+  {
+    "definitionName": "armtorps",
+    "displayName": "Torpedo Ship"
+  },
+  {
+    "definitionName": "armtrident",
+    "displayName": "Trident"
+  },
+  {
+    "definitionName": "armtship",
+    "displayName": "Convoy"
+  },
+  {
+    "definitionName": "armuwadves",
+    "displayName": "Hardened Energy Storage (armuwadves)"
+  },
+  {
+    "definitionName": "coruwadves",
+    "displayName": "Hardened Energy Storage (coruwadves)"
+  },
+  {
+    "definitionName": "legadvestore",
+    "displayName": "Hardened Energy Storage (legadvestore)"
+  },
+  {
+    "definitionName": "armuwadvms",
+    "displayName": "Hardened Metal Storage (armuwadvms)"
+  },
+  {
+    "definitionName": "coruwadvms",
+    "displayName": "Hardened Metal Storage (coruwadvms)"
+  },
+  {
+    "definitionName": "legamstor",
+    "displayName": "Hardened Metal Storage (legamstor)"
+  },
+  {
+    "definitionName": "armuwes",
+    "displayName": "Naval Energy Storage (armuwes)"
+  },
+  {
+    "definitionName": "coruwes",
+    "displayName": "Naval Energy Storage (coruwes)"
+  },
+  {
+    "definitionName": "leguwestore",
+    "displayName": "Naval Energy Storage (leguwestore)"
+  },
+  {
+    "definitionName": "armuwfus",
+    "displayName": "Naval Fusion Reactor (Armada)"
+  },
+  {
+    "definitionName": "coruwfus",
+    "displayName": "Naval Fusion Reactor (Cortex)"
+  },
+  {
+    "definitionName": "armuwgeo",
+    "displayName": "Offshore Geothermal Powerplant (Armada)"
+  },
+  {
+    "definitionName": "coruwgeo",
+    "displayName": "Offshore Geothermal Powerplant (Cortex)"
+  },
+  {
+    "definitionName": "leguwgeo",
+    "displayName": "Offshore Geothermal Powerplant (Legion)"
+  },
+  {
+    "definitionName": "armuwmme",
+    "displayName": "Naval Advanced Metal Extractor (Armada)"
+  },
+  {
+    "definitionName": "coruwmme",
+    "displayName": "Naval Advanced Metal Extractor (Cortex)"
+  },
+  {
+    "definitionName": "armuwmmm",
+    "displayName": "Naval Advanced Energy Converter (Armada)"
+  },
+  {
+    "definitionName": "coruwmmm",
+    "displayName": "Naval Advanced Energy Converter (Cortex)"
+  },
+  {
+    "definitionName": "armuwms",
+    "displayName": "Naval Metal Storage (armuwms)"
+  },
+  {
+    "definitionName": "coruwms",
+    "displayName": "Naval Metal Storage (coruwms)"
+  },
+  {
+    "definitionName": "leguwmstore",
+    "displayName": "Naval Metal Storage (leguwmstore)"
+  },
+  {
+    "definitionName": "armvader",
+    "displayName": "Tumbleweed"
+  },
+  {
+    "definitionName": "armvadert4",
+    "displayName": "Epic Tumbleweed"
+  },
+  {
+    "definitionName": "armvang",
+    "displayName": "Vanguard"
+  },
+  {
+    "definitionName": "armveil",
+    "displayName": "Veil"
+  },
+  {
+    "definitionName": "armvp",
+    "displayName": "Vehicle Plant (Armada)"
+  },
+  {
+    "definitionName": "corvp",
+    "displayName": "Vehicle Plant (Cortex)"
+  },
+  {
+    "definitionName": "armvulc",
+    "displayName": "Ragnarok"
+  },
+  {
+    "definitionName": "armwar",
+    "displayName": "Centurion"
+  },
+  {
+    "definitionName": "armwin",
+    "displayName": "Wind Turbine (Armada)"
+  },
+  {
+    "definitionName": "corwin",
+    "displayName": "Wind Turbine (Cortex)"
+  },
+  {
+    "definitionName": "legwin",
+    "displayName": "Wind Turbine (Legion)"
+  },
+  {
+    "definitionName": "armwint2",
+    "displayName": "Advanced Wind Turbine (Armada)"
+  },
+  {
+    "definitionName": "corwint2",
+    "displayName": "Advanced Wind Turbine (Cortex)"
+  },
+  {
+    "definitionName": "legwint2",
+    "displayName": "Advanced Wind Turbine (Legion)"
+  },
+  {
+    "definitionName": "armyork",
+    "displayName": "Shredder"
+  },
+  {
+    "definitionName": "armzapper",
+    "displayName": "Zapper"
+  },
+  {
+    "definitionName": "armzeus",
+    "displayName": "Welder"
+  },
+  {
+    "definitionName": "chip",
+    "displayName": "Chip"
+  },
+  {
+    "definitionName": "comeffigy",
+    "displayName": "Commander Effigy"
+  },
+  {
+    "definitionName": "coraak",
+    "displayName": "Manticore"
+  },
+  {
+    "definitionName": "corah",
+    "displayName": "Birdeater"
+  },
+  {
+    "definitionName": "corak",
+    "displayName": "Grunt"
+  },
+  {
+    "definitionName": "corakt4",
+    "displayName": "Epic Grunt"
+  },
+  {
+    "definitionName": "coramph",
+    "displayName": "Duck (coramph)"
+  },
+  {
+    "definitionName": "critter_duck",
+    "displayName": "Duck (critter_duck)"
+  },
+  {
+    "definitionName": "corantiship",
+    "displayName": "Oasis (corantiship)"
+  },
+  {
+    "definitionName": "corcarry",
+    "displayName": "Oasis (corcarry)"
+  },
+  {
+    "definitionName": "corape",
+    "displayName": "Wasp"
+  },
+  {
+    "definitionName": "corarch",
+    "displayName": "Arrow Storm"
+  },
+  {
+    "definitionName": "coratl",
+    "displayName": "Lamprey"
+  },
+  {
+    "definitionName": "corawac",
+    "displayName": "Condor"
+  },
+  {
+    "definitionName": "corban",
+    "displayName": "Banisher"
+  },
+  {
+    "definitionName": "corbats",
+    "displayName": "Despot"
+  },
+  {
+    "definitionName": "corbhmth",
+    "displayName": "Cerberus"
+  },
+  {
+    "definitionName": "corblackhy",
+    "displayName": "Black Hydra"
+  },
+  {
+    "definitionName": "corbuzz",
+    "displayName": "Calamity"
+  },
+  {
+    "definitionName": "corbw",
+    "displayName": "Shuriken"
+  },
+  {
+    "definitionName": "corcan",
+    "displayName": "Sumo"
+  },
+  {
+    "definitionName": "corcat",
+    "displayName": "Catapult"
+  },
+  {
+    "definitionName": "corcom",
+    "displayName": "Cortex Commander"
+  },
+  {
+    "definitionName": "corcomlvl10",
+    "displayName": "Cortex Commander Level 10"
+  },
+  {
+    "definitionName": "corcomlvl2",
+    "displayName": "Cortex Commander Level 2"
+  },
+  {
+    "definitionName": "corcomlvl3",
+    "displayName": "Cortex Commander Level 3"
+  },
+  {
+    "definitionName": "corcomlvl4",
+    "displayName": "Cortex Commander Level 4"
+  },
+  {
+    "definitionName": "corcomlvl5",
+    "displayName": "Cortex Commander Level 5"
+  },
+  {
+    "definitionName": "corcomlvl6",
+    "displayName": "Cortex Commander Level 6"
+  },
+  {
+    "definitionName": "corcomlvl7",
+    "displayName": "Cortex Commander Level 7"
+  },
+  {
+    "definitionName": "corcomlvl8",
+    "displayName": "Cortex Commander Level 8"
+  },
+  {
+    "definitionName": "corcomlvl9",
+    "displayName": "Cortex Commander Level 9"
+  },
+  {
+    "definitionName": "corcrash",
+    "displayName": "Trasher"
+  },
+  {
+    "definitionName": "corcrus",
+    "displayName": "Buccaneer"
+  },
+  {
+    "definitionName": "corcrw",
+    "displayName": "Archaic Dragon"
+  },
+  {
+    "definitionName": "corcrwh",
+    "displayName": "Dragon"
+  },
+  {
+    "definitionName": "corcrwt4",
+    "displayName": "Epic Dragon"
+  },
+  {
+    "definitionName": "corcut",
+    "displayName": "Cutlass"
+  },
+  {
+    "definitionName": "cordeadeye",
+    "displayName": "Deadeye"
+  },
+  {
+    "definitionName": "cordemon",
+    "displayName": "Demon"
+  },
+  {
+    "definitionName": "cordesolator",
+    "displayName": "Desolator"
+  },
+  {
+    "definitionName": "cordl",
+    "displayName": "Jellyfish"
+  },
+  {
+    "definitionName": "cordoom",
+    "displayName": "Bulwark"
+  },
+  {
+    "definitionName": "cordoomt3",
+    "displayName": "Epic Bulwark"
+  },
+  {
+    "definitionName": "cordronecarry",
+    "displayName": "Disperser"
+  },
+  {
+    "definitionName": "cordronecarryair",
+    "displayName": "Disperser Omni"
+  },
+  {
+    "definitionName": "cords",
+    "displayName": "Disgruntler"
+  },
+  {
+    "definitionName": "corenaa",
+    "displayName": "Naval Birdshot"
+  },
+  {
+    "definitionName": "corerad",
+    "displayName": "Eradicator"
+  },
+  {
+    "definitionName": "coresupp",
+    "displayName": "Supporter"
+  },
+  {
+    "definitionName": "coresuppt3",
+    "displayName": "Adjudicator"
+  },
+  {
+    "definitionName": "coreter",
+    "displayName": "Obscurer"
+  },
+  {
+    "definitionName": "corexp",
+    "displayName": "Exploiter"
+  },
+  {
+    "definitionName": "corfast",
+    "displayName": "Twitcher (corfast)"
+  },
+  {
+    "definitionName": "corhack",
+    "displayName": "Twitcher (corhack)"
+  },
+  {
+    "definitionName": "corfav",
+    "displayName": "Rascal"
+  },
+  {
+    "definitionName": "corfblackhyt4",
+    "displayName": "Flying Black Hydra"
+  },
+  {
+    "definitionName": "corfdoom",
+    "displayName": "Devastator"
+  },
+  {
+    "definitionName": "corfgate",
+    "displayName": "Atoll"
+  },
+  {
+    "definitionName": "corfhlt",
+    "displayName": "Coral"
+  },
+  {
+    "definitionName": "corfink",
+    "displayName": "Finch"
+  },
+  {
+    "definitionName": "corflak",
+    "displayName": "Birdshot"
+  },
+  {
+    "definitionName": "corfmd",
+    "displayName": "Prevailer"
+  },
+  {
+    "definitionName": "corforge",
+    "displayName": "Forge"
+  },
+  {
+    "definitionName": "corfrock",
+    "displayName": "Janitor"
+  },
+  {
+    "definitionName": "corfrt",
+    "displayName": "Slingshot"
+  },
+  {
+    "definitionName": "corfship",
+    "displayName": "Brimstone"
+  },
+  {
+    "definitionName": "corftiger",
+    "displayName": "Heat Tiger"
+  },
+  {
+    "definitionName": "corgarp",
+    "displayName": "Garpike"
+  },
+  {
+    "definitionName": "corgate",
+    "displayName": "Overseer (corgate)"
+  },
+  {
+    "definitionName": "raptorh5",
+    "displayName": "Overseer (raptorh5)"
+  },
+  {
+    "definitionName": "corgatet3",
+    "displayName": "Sanctuary"
+  },
+  {
+    "definitionName": "corgator",
+    "displayName": "Incisor"
+  },
+  {
+    "definitionName": "corgatreap",
+    "displayName": "Laser Tiger"
+  },
+  {
+    "definitionName": "corgol",
+    "displayName": "Tzar"
+  },
+  {
+    "definitionName": "corgolt4",
+    "displayName": "Epic Tzar"
+  },
+  {
+    "definitionName": "corhacs",
+    "displayName": "Pathfinder (corhacs)"
+  },
+  {
+    "definitionName": "cormls",
+    "displayName": "Pathfinder (cormls)"
+  },
+  {
+    "definitionName": "corhacv",
+    "displayName": "Printer (corhacv)"
+  },
+  {
+    "definitionName": "corprinter",
+    "displayName": "Printer (corprinter)"
+  },
+  {
+    "definitionName": "corvac",
+    "displayName": "Printer (corvac)"
+  },
+  {
+    "definitionName": "corhal",
+    "displayName": "Halberd"
+  },
+  {
+    "definitionName": "corhalab",
+    "displayName": "Experimeantal Bot Lab"
+  },
+  {
+    "definitionName": "corhllllt",
+    "displayName": "Quad Guard"
+  },
+  {
+    "definitionName": "corhllt",
+    "displayName": "Twin Guard"
+  },
+  {
+    "definitionName": "corhlt",
+    "displayName": "Warden"
+  },
+  {
+    "definitionName": "corhrk",
+    "displayName": "Arbiter"
+  },
+  {
+    "definitionName": "corhunt",
+    "displayName": "Watcher"
+  },
+  {
+    "definitionName": "corhurc",
+    "displayName": "Hailstorm"
+  },
+  {
+    "definitionName": "corhvytrans",
+    "displayName": "Hephaestus"
+  },
+  {
+    "definitionName": "corint",
+    "displayName": "Basilisk"
+  },
+  {
+    "definitionName": "corintr",
+    "displayName": "Intruder"
+  },
+  {
+    "definitionName": "corjamt",
+    "displayName": "Castro"
+  },
+  {
+    "definitionName": "corjugg",
+    "displayName": "Behemoth"
+  },
+  {
+    "definitionName": "corkarg",
+    "displayName": "Karganeth"
+  },
+  {
+    "definitionName": "corkarganetht4",
+    "displayName": "Epic Karganeth"
+  },
+  {
+    "definitionName": "corkark",
+    "displayName": "Archaic Karkinos"
+  },
+  {
+    "definitionName": "corkorg",
+    "displayName": "Juggernaut"
+  },
+  {
+    "definitionName": "corlevlr",
+    "displayName": "Pounder"
+  },
+  {
+    "definitionName": "corllt",
+    "displayName": "Guard"
+  },
+  {
+    "definitionName": "cormabm",
+    "displayName": "Saviour"
+  },
+  {
+    "definitionName": "cormadsam",
+    "displayName": "SAM"
+  },
+  {
+    "definitionName": "cormando",
+    "displayName": "Commando"
+  },
+  {
+    "definitionName": "cormandot4",
+    "displayName": "Epic Commando"
+  },
+  {
+    "definitionName": "cormart",
+    "displayName": "Quaker"
+  },
+  {
+    "definitionName": "cormaw",
+    "displayName": "Dragon's Maw (cormaw)"
+  },
+  {
+    "definitionName": "corscavdtf",
+    "displayName": "Dragon's Maw (corscavdtf)"
+  },
+  {
+    "definitionName": "legdtf",
+    "displayName": "Dragon's Maw (legdtf)"
+  },
+  {
+    "definitionName": "cormexp",
+    "displayName": "Advanced Exploiter"
+  },
+  {
+    "definitionName": "cormh",
+    "displayName": "Mangonel"
+  },
+  {
+    "definitionName": "corminibuzz",
+    "displayName": "Mini Calamity"
+  },
+  {
+    "definitionName": "cormist",
+    "displayName": "Lasher"
+  },
+  {
+    "definitionName": "cormlv",
+    "displayName": "Trapper"
+  },
+  {
+    "definitionName": "cormort",
+    "displayName": "Sheldon"
+  },
+  {
+    "definitionName": "cormship",
+    "displayName": "Messenger"
+  },
+  {
+    "definitionName": "cormuskrat",
+    "displayName": "Muskrat"
+  },
+  {
+    "definitionName": "cormwall",
+    "displayName": "Dragon's Rage"
+  },
+  {
+    "definitionName": "cornecro",
+    "displayName": "Graverobber"
+  },
+  {
+    "definitionName": "coronager",
+    "displayName": "Onager"
+  },
+  {
+    "definitionName": "corparrow",
+    "displayName": "Poison Arrow"
+  },
+  {
+    "definitionName": "corphantom",
+    "displayName": "Phantom"
+  },
+  {
+    "definitionName": "corprince",
+    "displayName": "Black Prince"
+  },
+  {
+    "definitionName": "corpship",
+    "displayName": "Riptide"
+  },
+  {
+    "definitionName": "corpt",
+    "displayName": "Herring"
+  },
+  {
+    "definitionName": "corpun",
+    "displayName": "Agitator"
+  },
+  {
+    "definitionName": "corpyro",
+    "displayName": "Fiend"
+  },
+  {
+    "definitionName": "corraid",
+    "displayName": "Brute"
+  },
+  {
+    "definitionName": "correap",
+    "displayName": "Tiger"
+  },
+  {
+    "definitionName": "correcl",
+    "displayName": "Death Cavalry"
+  },
+  {
+    "definitionName": "corrl",
+    "displayName": "Thistle"
+  },
+  {
+    "definitionName": "corroach",
+    "displayName": "Bedbug"
+  },
+  {
+    "definitionName": "corroy",
+    "displayName": "Oppressor"
+  },
+  {
+    "definitionName": "corsala",
+    "displayName": "Salamander"
+  },
+  {
+    "definitionName": "corsb",
+    "displayName": "Dam Buster"
+  },
+  {
+    "definitionName": "corscavdtm",
+    "displayName": "Missile Wall"
+  },
+  {
+    "definitionName": "corscreamer",
+    "displayName": "Screamer"
+  },
+  {
+    "definitionName": "corsd",
+    "displayName": "Nemesis"
+  },
+  {
+    "definitionName": "corseah",
+    "displayName": "Skyhook"
+  },
+  {
+    "definitionName": "corseal",
+    "displayName": "Alligator"
+  },
+  {
+    "definitionName": "corseap",
+    "displayName": "Monsoon"
+  },
+  {
+    "definitionName": "corsent",
+    "displayName": "Fury"
+  },
+  {
+    "definitionName": "corsentinel",
+    "displayName": "Sentinel"
+  },
+  {
+    "definitionName": "corsfig",
+    "displayName": "Bat (corsfig)"
+  },
+  {
+    "definitionName": "corsfig2",
+    "displayName": "Bat (corsfig2)"
+  },
+  {
+    "definitionName": "corsh",
+    "displayName": "Goon"
+  },
+  {
+    "definitionName": "corshad",
+    "displayName": "Whirlwind"
+  },
+  {
+    "definitionName": "corshark",
+    "displayName": "Predator"
+  },
+  {
+    "definitionName": "corshiva",
+    "displayName": "Shiva"
+  },
+  {
+    "definitionName": "corshroud",
+    "displayName": "Shroud"
+  },
+  {
+    "definitionName": "corsiegebreaker",
+    "displayName": "Siegebreaker"
+  },
+  {
+    "definitionName": "corsilo",
+    "displayName": "Apocalypse"
+  },
+  {
+    "definitionName": "corsjam",
+    "displayName": "Phantasm"
+  },
+  {
+    "definitionName": "corsktl",
+    "displayName": "Skuttle"
+  },
+  {
+    "definitionName": "corslrpc",
+    "displayName": "Leviathan"
+  },
+  {
+    "definitionName": "corsnap",
+    "displayName": "Cayman"
+  },
+  {
+    "definitionName": "corsok",
+    "displayName": "Cataphract"
+  },
+  {
+    "definitionName": "corspec",
+    "displayName": "Deceiver"
+  },
+  {
+    "definitionName": "corspy",
+    "displayName": "Spectre"
+  },
+  {
+    "definitionName": "corssub",
+    "displayName": "Kraken"
+  },
+  {
+    "definitionName": "corstorm",
+    "displayName": "Aggravator"
+  },
+  {
+    "definitionName": "corsub",
+    "displayName": "Orca"
+  },
+  {
+    "definitionName": "corsumo",
+    "displayName": "Mammoth"
+  },
+  {
+    "definitionName": "cortermite",
+    "displayName": "Termite"
+  },
+  {
+    "definitionName": "corthermite",
+    "displayName": "Thermite"
+  },
+  {
+    "definitionName": "corthovr",
+    "displayName": "Caravan"
+  },
+  {
+    "definitionName": "corthud",
+    "displayName": "Thug"
+  },
+  {
+    "definitionName": "cortitan",
+    "displayName": "Angler"
+  },
+  {
+    "definitionName": "cortl",
+    "displayName": "Urchin"
+  },
+  {
+    "definitionName": "cortoast",
+    "displayName": "Persecutor"
+  },
+  {
+    "definitionName": "cortorch",
+    "displayName": "Torch"
+  },
+  {
+    "definitionName": "cortrem",
+    "displayName": "Tremor"
+  },
+  {
+    "definitionName": "cortron",
+    "displayName": "Catalyst"
+  },
+  {
+    "definitionName": "cortship",
+    "displayName": "Coffin"
+  },
+  {
+    "definitionName": "corvalk",
+    "displayName": "Hercules"
+  },
+  {
+    "definitionName": "corvamp",
+    "displayName": "Nighthawk"
+  },
+  {
+    "definitionName": "corveng",
+    "displayName": "Valiant"
+  },
+  {
+    "definitionName": "corvipe",
+    "displayName": "Scorpion"
+  },
+  {
+    "definitionName": "corvoyr",
+    "displayName": "Augur"
+  },
+  {
+    "definitionName": "corvrad",
+    "displayName": "Omen"
+  },
+  {
+    "definitionName": "corvroc",
+    "displayName": "Negotiator"
+  },
+  {
+    "definitionName": "corwolv",
+    "displayName": "Wolverine"
+  },
+  {
+    "definitionName": "critter_ant",
+    "displayName": "Ant"
+  },
+  {
+    "definitionName": "critter_crab",
+    "displayName": "Crab"
+  },
+  {
+    "definitionName": "critter_goldfish",
+    "displayName": "Goldfish"
+  },
+  {
+    "definitionName": "critter_gull",
+    "displayName": "Seagull"
+  },
+  {
+    "definitionName": "critter_penguin",
+    "displayName": "Penguin"
+  },
+  {
+    "definitionName": "critter_penguinbro",
+    "displayName": "Penguin Bro"
+  },
+  {
+    "definitionName": "critter_penguinking",
+    "displayName": "Penguin King"
+  },
+  {
+    "definitionName": "dbg_sphere",
+    "displayName": "dbg_sphere (dbg_sphere)"
+  },
+  {
+    "definitionName": "dbg_sphere_fullmetal",
+    "displayName": "dbg_sphere (dbg_sphere_fullmetal)"
+  },
+  {
+    "definitionName": "dice",
+    "displayName": "Dice"
+  },
+  {
+    "definitionName": "freefusion",
+    "displayName": "Free Fusion Reactor"
+  },
+  {
+    "definitionName": "leegmech",
+    "displayName": "Praetorian (leegmech)"
+  },
+  {
+    "definitionName": "legeshotgunmech",
+    "displayName": "Praetorian (legeshotgunmech)"
+  },
+  {
+    "definitionName": "legaabot",
+    "displayName": "Toxotai"
+  },
+  {
+    "definitionName": "legaap",
+    "displayName": "Legion Advanced Aircraft Plant"
+  },
+  {
+    "definitionName": "legabm",
+    "displayName": "Aegis"
+  },
+  {
+    "definitionName": "legaceb",
+    "displayName": "Proteus"
+  },
+  {
+    "definitionName": "legacluster",
+    "displayName": "Eviscerator"
+  },
+  {
+    "definitionName": "legadvaabot",
+    "displayName": "Aquilon"
+  },
+  {
+    "definitionName": "legafcv",
+    "displayName": "Aceso"
+  },
+  {
+    "definitionName": "legafigdef",
+    "displayName": "Ajax"
+  },
+  {
+    "definitionName": "legah",
+    "displayName": "Alpheus"
+  },
+  {
+    "definitionName": "legaheattank",
+    "displayName": "Prometheus"
+  },
+  {
+    "definitionName": "legajam",
+    "displayName": "Erebus"
+  },
+  {
+    "definitionName": "legajamk",
+    "displayName": "Tiresias"
+  },
+  {
+    "definitionName": "legalab",
+    "displayName": "Legion Advanced Bot Lab"
+  },
+  {
+    "definitionName": "legamcluster",
+    "displayName": "Cleaver"
+  },
+  {
+    "definitionName": "legamph",
+    "displayName": "Telchine"
+  },
+  {
+    "definitionName": "legamphtank",
+    "displayName": "Cetus"
+  },
+  {
+    "definitionName": "legap",
+    "displayName": "Legion Drone Plant"
+  },
+  {
+    "definitionName": "legapopupdef",
+    "displayName": "Chimera"
+  },
+  {
+    "definitionName": "legapt3",
+    "displayName": "Experimental Aircraft Gantry"
+  },
+  {
+    "definitionName": "legaradk",
+    "displayName": "Euclid"
+  },
+  {
+    "definitionName": "legaskirmtank",
+    "displayName": "Gladiator"
+  },
+  {
+    "definitionName": "legaspy",
+    "displayName": "Eidolon"
+  },
+  {
+    "definitionName": "legatorpbomber",
+    "displayName": "Aesacus"
+  },
+  {
+    "definitionName": "legatrans",
+    "displayName": "Hippotes"
+  },
+  {
+    "definitionName": "legavjam",
+    "displayName": "Cicero"
+  },
+  {
+    "definitionName": "legavrad",
+    "displayName": "Pheme"
+  },
+  {
+    "definitionName": "legavroc",
+    "displayName": "Boreas"
+  },
+  {
+    "definitionName": "legbal",
+    "displayName": "Ballista"
+  },
+  {
+    "definitionName": "legbar",
+    "displayName": "Barrage"
+  },
+  {
+    "definitionName": "legbart",
+    "displayName": "Belcher"
+  },
+  {
+    "definitionName": "legbastion",
+    "displayName": "Bastion"
+  },
+  {
+    "definitionName": "legbombard",
+    "displayName": "Bombardier (legbombard)"
+  },
+  {
+    "definitionName": "raptor_air_bomber_basic_t2_v1",
+    "displayName": "Bombardier (raptor_air_bomber_basic_t2_v1)"
+  },
+  {
+    "definitionName": "raptor_air_bomber_basic_t2_v2",
+    "displayName": "Bombardier (raptor_air_bomber_basic_t2_v2)"
+  },
+  {
+    "definitionName": "legbunk",
+    "displayName": "Pilum"
+  },
+  {
+    "definitionName": "legca",
+    "displayName": "Legion Construction Aircraft"
+  },
+  {
+    "definitionName": "legcar",
+    "displayName": "Cardea"
+  },
+  {
+    "definitionName": "legcen",
+    "displayName": "Phobos"
+  },
+  {
+    "definitionName": "legcib",
+    "displayName": "Blindfold"
+  },
+  {
+    "definitionName": "legck",
+    "displayName": "Legion Construction Bot"
+  },
+  {
+    "definitionName": "legcluster",
+    "displayName": "Amputator"
+  },
+  {
+    "definitionName": "legcom",
+    "displayName": "Legion Commander (legcom)"
+  },
+  {
+    "definitionName": "legdecom",
+    "displayName": "Legion Commander (legdecom)"
+  },
+  {
+    "definitionName": "legcomecon",
+    "displayName": "Economy Commander"
+  },
+  {
+    "definitionName": "legcomlvl10",
+    "displayName": "Legion Commander Level 10"
+  },
+  {
+    "definitionName": "legcomlvl2",
+    "displayName": "Legion Commander Level 2"
+  },
+  {
+    "definitionName": "legcomlvl3",
+    "displayName": "Legion Commander Level 3"
+  },
+  {
+    "definitionName": "legcomlvl4",
+    "displayName": "Legion Commander Level 4"
+  },
+  {
+    "definitionName": "legcomlvl5",
+    "displayName": "Legion Commander Level 5"
+  },
+  {
+    "definitionName": "legcomlvl6",
+    "displayName": "Legion Commander Level 6"
+  },
+  {
+    "definitionName": "legcomlvl7",
+    "displayName": "Legion Commander Level 7"
+  },
+  {
+    "definitionName": "legcomlvl8",
+    "displayName": "Legion Commander Level 8"
+  },
+  {
+    "definitionName": "legcomlvl9",
+    "displayName": "Legion Commander Level 9"
+  },
+  {
+    "definitionName": "legcomoff",
+    "displayName": "Offensive Commander"
+  },
+  {
+    "definitionName": "legcomt2com",
+    "displayName": "Combat Commander"
+  },
+  {
+    "definitionName": "legcomt2def",
+    "displayName": "Tactical Defense Commander"
+  },
+  {
+    "definitionName": "legcomt2off",
+    "displayName": "Tactical Offense Commander"
+  },
+  {
+    "definitionName": "legctl",
+    "displayName": "Euryale"
+  },
+  {
+    "definitionName": "legcv",
+    "displayName": "Legion Construction Vehicle"
+  },
+  {
+    "definitionName": "legdeflector",
+    "displayName": "Soteria"
+  },
+  {
+    "definitionName": "legdrone",
+    "displayName": "Legion Drone"
+  },
+  {
+    "definitionName": "legdtm",
+    "displayName": "Dragon's Tail"
+  },
+  {
+    "definitionName": "legdtr",
+    "displayName": "Dragon's Jaw"
+  },
+  {
+    "definitionName": "legeallterrainmech",
+    "displayName": "Myrmidon"
+  },
+  {
+    "definitionName": "legeheatraymech",
+    "displayName": "Sol Invictus"
+  },
+  {
+    "definitionName": "legeheatraymech_old",
+    "displayName": "Archaic Sol Invictus"
+  },
+  {
+    "definitionName": "legehovertank",
+    "displayName": "Charybdis"
+  },
+  {
+    "definitionName": "legelrpcmech",
+    "displayName": "Astraeus"
+  },
+  {
+    "definitionName": "legerailtank",
+    "displayName": "Daedalus"
+  },
+  {
+    "definitionName": "legeyes",
+    "displayName": "Argus"
+  },
+  {
+    "definitionName": "legfhive",
+    "displayName": "Hive (legfhive)"
+  },
+  {
+    "definitionName": "leghive",
+    "displayName": "Hive (leghive)"
+  },
+  {
+    "definitionName": "legfhp",
+    "displayName": "Offshore Hovercraft Platform"
+  },
+  {
+    "definitionName": "legfig",
+    "displayName": "Noctua"
+  },
+  {
+    "definitionName": "legflak",
+    "displayName": "Pluto"
+  },
+  {
+    "definitionName": "legfloat",
+    "displayName": "Triton"
+  },
+  {
+    "definitionName": "legfmg",
+    "displayName": "Gelasma"
+  },
+  {
+    "definitionName": "legfort",
+    "displayName": "Tyrannus"
+  },
+  {
+    "definitionName": "legfortt4",
+    "displayName": "Epic Tyrannus"
+  },
+  {
+    "definitionName": "legfrl",
+    "displayName": "Polybolos"
+  },
+  {
+    "definitionName": "leggat",
+    "displayName": "Decurion"
+  },
+  {
+    "definitionName": "leggatet3",
+    "displayName": "Elysium"
+  },
+  {
+    "definitionName": "leggob",
+    "displayName": "Goblin"
+  },
+  {
+    "definitionName": "leggobt3",
+    "displayName": "Epic Goblin"
+  },
+  {
+    "definitionName": "leghaap",
+    "displayName": "Legion Experimental Aircraft Plant"
+  },
+  {
+    "definitionName": "leghaca",
+    "displayName": "Legion Experimental Construction Aircraft"
+  },
+  {
+    "definitionName": "leghack",
+    "displayName": "Experimental Construction Bot"
+  },
+  {
+    "definitionName": "leghacv",
+    "displayName": "Experimental Construction Vehicle"
+  },
+  {
+    "definitionName": "leghades",
+    "displayName": "Alaris"
+  },
+  {
+    "definitionName": "leghastatus",
+    "displayName": "Hastatus (leghastatus)"
+  },
+  {
+    "definitionName": "leghastatusalt",
+    "displayName": "Hastatus (leghastatusalt)"
+  },
+  {
+    "definitionName": "legheavydrone",
+    "displayName": "Legion Heavy Drone (legheavydrone)"
+  },
+  {
+    "definitionName": "legheavydronesmall",
+    "displayName": "Legion Heavy Drone (legheavydronesmall)"
+  },
+  {
+    "definitionName": "leghelios",
+    "displayName": "Helios"
+  },
+  {
+    "definitionName": "leghrk",
+    "displayName": "Thanatos"
+  },
+  {
+    "definitionName": "leginc",
+    "displayName": "Incinerator"
+  },
+  {
+    "definitionName": "leginf",
+    "displayName": "Inferno"
+  },
+  {
+    "definitionName": "leginfestor",
+    "displayName": "Infestor"
+  },
+  {
+    "definitionName": "legionnaire",
+    "displayName": "Legionnaire"
+  },
+  {
+    "definitionName": "legjam",
+    "displayName": "Nyx"
+  },
+  {
+    "definitionName": "legjav",
+    "displayName": "Javelin"
+  },
+  {
+    "definitionName": "legkam",
+    "displayName": "Martyr"
+  },
+  {
+    "definitionName": "legkark",
+    "displayName": "Karkinos"
+  },
+  {
+    "definitionName": "legkeres",
+    "displayName": "Keres"
+  },
+  {
+    "definitionName": "leglab",
+    "displayName": "Legion Bot Lab"
+  },
+  {
+    "definitionName": "leglht",
+    "displayName": "Pharos"
+  },
+  {
+    "definitionName": "leglob",
+    "displayName": "Satyr"
+  },
+  {
+    "definitionName": "leglraa",
+    "displayName": "Xyston"
+  },
+  {
+    "definitionName": "leglrpc",
+    "displayName": "Olympus"
+  },
+  {
+    "definitionName": "leglts",
+    "displayName": "Aeolus"
+  },
+  {
+    "definitionName": "leglupara",
+    "displayName": "Lupara"
+  },
+  {
+    "definitionName": "legmed",
+    "displayName": "Medusa"
+  },
+  {
+    "definitionName": "legmext15",
+    "displayName": "Overcharged Metal Extractor"
+  },
+  {
+    "definitionName": "legmg",
+    "displayName": "Cacophony"
+  },
+  {
+    "definitionName": "legmh",
+    "displayName": "Salacia"
+  },
+  {
+    "definitionName": "legmineb",
+    "displayName": "Harbinger"
+  },
+  {
+    "definitionName": "legministarfall",
+    "displayName": "Mini Starfall"
+  },
+  {
+    "definitionName": "legmlv",
+    "displayName": "Sapper"
+  },
+  {
+    "definitionName": "legmohobp",
+    "displayName": "Fortifier"
+  },
+  {
+    "definitionName": "legmohocon",
+    "displayName": "Advanced Metal Fortifier (legmohocon)"
+  },
+  {
+    "definitionName": "legmohoconct",
+    "displayName": "Advanced Metal Fortifier (legmohoconct)"
+  },
+  {
+    "definitionName": "legmohoconin",
+    "displayName": "Advanced Metal Fortifier (legmohoconin)"
+  },
+  {
+    "definitionName": "legmos",
+    "displayName": "Mosquito"
+  },
+  {
+    "definitionName": "legmost3",
+    "displayName": "Epic Mosquito"
+  },
+  {
+    "definitionName": "legmrv",
+    "displayName": "Quickshot"
+  },
+  {
+    "definitionName": "legnap",
+    "displayName": "Wildfire"
+  },
+  {
+    "definitionName": "legner",
+    "displayName": "Nereus"
+  },
+  {
+    "definitionName": "legoptio",
+    "displayName": "Optio"
+  },
+  {
+    "definitionName": "legotter",
+    "displayName": "Otter"
+  },
+  {
+    "definitionName": "legpede",
+    "displayName": "Mukade"
+  },
+  {
+    "definitionName": "legperdition",
+    "displayName": "Perdition"
+  },
+  {
+    "definitionName": "legphoenix",
+    "displayName": "Phoenix"
+  },
+  {
+    "definitionName": "legpontus",
+    "displayName": "Pontus"
+  },
+  {
+    "definitionName": "legportent",
+    "displayName": "Portent"
+  },
+  {
+    "definitionName": "legrail",
+    "displayName": "Lance"
+  },
+  {
+    "definitionName": "legrampart",
+    "displayName": "Rampart"
+  },
+  {
+    "definitionName": "legrezbot",
+    "displayName": "Zagreus"
+  },
+  {
+    "definitionName": "legrhapsis",
+    "displayName": "Rhapsis"
+  },
+  {
+    "definitionName": "legrl",
+    "displayName": "Bramble"
+  },
+  {
+    "definitionName": "legrwall",
+    "displayName": "Dragon's Constitution"
+  },
+  {
+    "definitionName": "legscout",
+    "displayName": "Wheelie"
+  },
+  {
+    "definitionName": "legsd",
+    "displayName": "Ichnaea"
+  },
+  {
+    "definitionName": "legsh",
+    "displayName": "Glaucus"
+  },
+  {
+    "definitionName": "legshot",
+    "displayName": "Phalanx"
+  },
+  {
+    "definitionName": "legsilo",
+    "displayName": "Supernova"
+  },
+  {
+    "definitionName": "legsnapper",
+    "displayName": "Snapper"
+  },
+  {
+    "definitionName": "legsrail",
+    "displayName": "Arquebus"
+  },
+  {
+    "definitionName": "legsrailt4",
+    "displayName": "Epic Arquebus"
+  },
+  {
+    "definitionName": "legstarfall",
+    "displayName": "Starfall"
+  },
+  {
+    "definitionName": "legstingray",
+    "displayName": "Stingray"
+  },
+  {
+    "definitionName": "legstr",
+    "displayName": "Hoplite"
+  },
+  {
+    "definitionName": "legstronghold",
+    "displayName": "Stronghold"
+  },
+  {
+    "definitionName": "legtl",
+    "displayName": "Stheno"
+  },
+  {
+    "definitionName": "legtriarius",
+    "displayName": "Triarius (legtriarius)"
+  },
+  {
+    "definitionName": "legtriariusdrone",
+    "displayName": "Triarius (legtriariusdrone)"
+  },
+  {
+    "definitionName": "legvcarry",
+    "displayName": "Mantis"
+  },
+  {
+    "definitionName": "legvelite",
+    "displayName": "Velite"
+  },
+  {
+    "definitionName": "legvenator",
+    "displayName": "Venator"
+  },
+  {
+    "definitionName": "legvflak",
+    "displayName": "Charon"
+  },
+  {
+    "definitionName": "legvision",
+    "displayName": "Vision"
+  },
+  {
+    "definitionName": "legvp",
+    "displayName": "Legion Vehicle Plant"
+  },
+  {
+    "definitionName": "legwhisper",
+    "displayName": "Whisper"
+  },
+  {
+    "definitionName": "lootboxbronze",
+    "displayName": "Bronze Resource Generator"
+  },
+  {
+    "definitionName": "lootboxgold",
+    "displayName": "Gold Resource Generator"
+  },
+  {
+    "definitionName": "lootboxplatinum",
+    "displayName": "Platinum Resource Generator"
+  },
+  {
+    "definitionName": "lootboxsilver",
+    "displayName": "Silver Resource Generator"
+  },
+  {
+    "definitionName": "lootdroppod_gold",
+    "displayName": "Lootbox Droppod (lootdroppod_gold)"
+  },
+  {
+    "definitionName": "lootdroppod_printer",
+    "displayName": "Lootbox Droppod (lootdroppod_printer)"
+  },
+  {
+    "definitionName": "meteor",
+    "displayName": "Meteor"
+  },
+  {
+    "definitionName": "mission_command_tower",
+    "displayName": "Command Tower"
+  },
+  {
+    "definitionName": "nuketest",
+    "displayName": "New Nuke Spawner (nuketest)"
+  },
+  {
+    "definitionName": "nuketestcor",
+    "displayName": "New Nuke Spawner (nuketestcor)"
+  },
+  {
+    "definitionName": "scavempspawner",
+    "displayName": "New Nuke Spawner (scavempspawner)"
+  },
+  {
+    "definitionName": "nuketestorg",
+    "displayName": "Original Arm Nuke Spawner"
+  },
+  {
+    "definitionName": "pbr_cube",
+    "displayName": "PBR Test Cube Thing"
+  },
+  {
+    "definitionName": "raptor_air_bomber_acid_t2_v1",
+    "displayName": "Acid Bombardier"
+  },
+  {
+    "definitionName": "raptor_air_bomber_basic_t1_v1",
+    "displayName": "Juvenile Bombardier"
+  },
+  {
+    "definitionName": "raptor_air_bomber_basic_t4_v1",
+    "displayName": "Apex Bombardier (raptor_air_bomber_basic_t4_v1)"
+  },
+  {
+    "definitionName": "raptor_air_bomber_basic_t4_v2",
+    "displayName": "Apex Bombardier (raptor_air_bomber_basic_t4_v2)"
+  },
+  {
+    "definitionName": "raptor_air_bomber_brood_t4_v2",
+    "displayName": "Hatchling Bomber (raptor_air_bomber_brood_t4_v2)"
+  },
+  {
+    "definitionName": "raptor_air_bomber_brood_t4_v3",
+    "displayName": "Hatchling Bomber (raptor_air_bomber_brood_t4_v3)"
+  },
+  {
+    "definitionName": "raptor_air_bomber_brood_t4_v4",
+    "displayName": "Hatchling Bomber (raptor_air_bomber_brood_t4_v4)"
+  },
+  {
+    "definitionName": "raptor_air_bomber_emp_t2_v1",
+    "displayName": "Paralyzing Bombardier"
+  },
+  {
+    "definitionName": "raptor_air_fighter_basic_t1_v1",
+    "displayName": "Juvenile Airfighter"
+  },
+  {
+    "definitionName": "raptor_air_fighter_basic_t2_v1",
+    "displayName": "Airfighter (raptor_air_fighter_basic_t2_v1)"
+  },
+  {
+    "definitionName": "raptor_air_fighter_basic_t2_v2",
+    "displayName": "Airfighter (raptor_air_fighter_basic_t2_v2)"
+  },
+  {
+    "definitionName": "raptor_air_fighter_basic_t2_v3",
+    "displayName": "Airfighter (raptor_air_fighter_basic_t2_v3)"
+  },
+  {
+    "definitionName": "raptor_air_fighter_basic_t2_v4",
+    "displayName": "Airfighter (raptor_air_fighter_basic_t2_v4)"
+  },
+  {
+    "definitionName": "raptor_air_fighter_basic_t4_v1",
+    "displayName": "Apex Airfighter"
+  },
+  {
+    "definitionName": "raptor_air_kamikaze_basic_t2_v1",
+    "displayName": "Flying Kamikaze"
+  },
+  {
+    "definitionName": "raptor_air_scout_basic_t2_v1",
+    "displayName": "Observer"
+  },
+  {
+    "definitionName": "raptor_air_scout_basic_t3_v1",
+    "displayName": "Mature Observer"
+  },
+  {
+    "definitionName": "raptor_air_scout_basic_t4_v1",
+    "displayName": "Apex Observer"
+  },
+  {
+    "definitionName": "raptor_allterrain_arty_acid_t2_v1",
+    "displayName": "Acid Mortar"
+  },
+  {
+    "definitionName": "raptor_allterrain_arty_acid_t4_v1",
+    "displayName": "Apex Acid Mortar"
+  },
+  {
+    "definitionName": "raptor_allterrain_arty_basic_t2_v1",
+    "displayName": "Mortar"
+  },
+  {
+    "definitionName": "raptor_allterrain_arty_basic_t4_v1",
+    "displayName": "Apex Mortar"
+  },
+  {
+    "definitionName": "raptor_allterrain_arty_brood_t2_v1",
+    "displayName": "Hatchling Artillery"
+  },
+  {
+    "definitionName": "raptor_allterrain_arty_brood_t4_v1",
+    "displayName": "Apex Hatchling Artillery"
+  },
+  {
+    "definitionName": "raptor_allterrain_arty_emp_t2_v1",
+    "displayName": "Paralyzing Mortar"
+  },
+  {
+    "definitionName": "raptor_allterrain_arty_emp_t4_v1",
+    "displayName": "Apex Paralyzing Mortar"
+  },
+  {
+    "definitionName": "raptor_allterrain_assault_acid_t2_v1",
+    "displayName": "All-Terrain Acid Brawler"
+  },
+  {
+    "definitionName": "raptor_allterrain_assault_basic_t2_v1",
+    "displayName": "All-Terrain Brawler (raptor_allterrain_assault_basic_t2_v1)"
+  },
+  {
+    "definitionName": "raptor_allterrain_assault_basic_t2_v2",
+    "displayName": "All-Terrain Brawler (raptor_allterrain_assault_basic_t2_v2)"
+  },
+  {
+    "definitionName": "raptor_allterrain_assault_basic_t2_v3",
+    "displayName": "All-Terrain Brawler (raptor_allterrain_assault_basic_t2_v3)"
+  },
+  {
+    "definitionName": "raptor_allterrain_assault_basic_t4_v1",
+    "displayName": "Apex All-Terrain Brawler (raptor_allterrain_assault_basic_t4_v1)"
+  },
+  {
+    "definitionName": "raptor_allterrain_assault_basic_t4_v2",
+    "displayName": "Apex All-Terrain Brawler (raptor_allterrain_assault_basic_t4_v2)"
+  },
+  {
+    "definitionName": "raptor_allterrain_assault_emp_t2_v1",
+    "displayName": "All-Terrain Paralyzing Brawler"
+  },
+  {
+    "definitionName": "raptor_allterrain_swarmer_acid_t2_v1",
+    "displayName": "All-Terrain Acid Spitter"
+  },
+  {
+    "definitionName": "raptor_allterrain_swarmer_basic_t2_v1",
+    "displayName": "All-Terrain Swarmer"
+  },
+  {
+    "definitionName": "raptor_allterrain_swarmer_basic_t3_v1",
+    "displayName": "Mature All-Terrain Swarmer"
+  },
+  {
+    "definitionName": "raptor_allterrain_swarmer_basic_t4_v1",
+    "displayName": "Apex All-Terrain Swarmer"
+  },
+  {
+    "definitionName": "raptor_allterrain_swarmer_emp_t2_v1",
+    "displayName": "All-Terrain Paralyzer"
+  },
+  {
+    "definitionName": "raptor_allterrain_swarmer_fire_t2_v1",
+    "displayName": "All-Terrain Pyro (raptor_allterrain_swarmer_fire_t2_v1)"
+  },
+  {
+    "definitionName": "raptor_antinuke",
+    "displayName": "Raptor Antinuke"
+  },
+  {
+    "definitionName": "raptor_hive",
+    "displayName": "Raptor Hive (raptor_hive)"
+  },
+  {
+    "definitionName": "raptor_land_assault_acid_t2_v1",
+    "displayName": "Apex Acid Spitter"
+  },
+  {
+    "definitionName": "raptor_land_assault_basic_t2_v1",
+    "displayName": "Brawler (raptor_land_assault_basic_t2_v1)"
+  },
+  {
+    "definitionName": "raptor_land_assault_basic_t2_v2",
+    "displayName": "Brawler (raptor_land_assault_basic_t2_v2)"
+  },
+  {
+    "definitionName": "raptor_land_assault_basic_t2_v3",
+    "displayName": "Brawler (raptor_land_assault_basic_t2_v3)"
+  },
+  {
+    "definitionName": "raptor_land_assault_basic_t4_v1",
+    "displayName": "Apex Brawler (raptor_land_assault_basic_t4_v1)"
+  },
+  {
+    "definitionName": "raptor_land_assault_basic_t4_v2",
+    "displayName": "Apex Brawler (raptor_land_assault_basic_t4_v2)"
+  },
+  {
+    "definitionName": "raptor_land_assault_emp_t2_v1",
+    "displayName": "Paralyzing Brawler"
+  },
+  {
+    "definitionName": "raptor_land_assault_spectre_t2_v1",
+    "displayName": "Spectre Brawler"
+  },
+  {
+    "definitionName": "raptor_land_assault_spectre_t4_v1",
+    "displayName": "Apex Spectre Brawler"
+  },
+  {
+    "definitionName": "raptor_land_kamikaze_basic_t2_v1",
+    "displayName": "Kamikaze"
+  },
+  {
+    "definitionName": "raptor_land_kamikaze_basic_t4_v1",
+    "displayName": "Apex Kamikaze"
+  },
+  {
+    "definitionName": "raptor_land_kamikaze_emp_t2_v1",
+    "displayName": "Paralyzing Kamikaze"
+  },
+  {
+    "definitionName": "raptor_land_kamikaze_emp_t4_v1",
+    "displayName": "Apex Paralyzing Kamikaze"
+  },
+  {
+    "definitionName": "raptor_land_spiker_basic_t2_v1",
+    "displayName": "Spiker"
+  },
+  {
+    "definitionName": "raptor_land_spiker_basic_t4_v1",
+    "displayName": "Apex Spiker"
+  },
+  {
+    "definitionName": "raptor_land_spiker_spectre_t4_v1",
+    "displayName": "Apex Spectre Spiker"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_acids_t2_v1",
+    "displayName": "Acid Spitter"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_basic_t1_v1",
+    "displayName": "Juvenile Swarmer"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_basic_t2_v1",
+    "displayName": "Swarmer (raptor_land_swarmer_basic_t2_v1)"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_basic_t2_v2",
+    "displayName": "Swarmer (raptor_land_swarmer_basic_t2_v2)"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_basic_t2_v3",
+    "displayName": "Swarmer (raptor_land_swarmer_basic_t2_v3)"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_basic_t2_v4",
+    "displayName": "Swarmer (raptor_land_swarmer_basic_t2_v4)"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_basic_t3_v1",
+    "displayName": "Mature Swarmer (raptor_land_swarmer_basic_t3_v1)"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_basic_t3_v2",
+    "displayName": "Mature Swarmer (raptor_land_swarmer_basic_t3_v2)"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_basic_t3_v3",
+    "displayName": "Mature Swarmer (raptor_land_swarmer_basic_t3_v3)"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_basic_t4_v1",
+    "displayName": "Apex Swarmer (raptor_land_swarmer_basic_t4_v1)"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_basic_t4_v2",
+    "displayName": "Apex Swarmer (raptor_land_swarmer_basic_t4_v2)"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_brood_t2_v1",
+    "displayName": "Hatchling"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_brood_t3_v1",
+    "displayName": "Mature Hatchling"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_brood_t4_v1",
+    "displayName": "Apex Hatchling"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_emp_t2_v1",
+    "displayName": "Paralyzing Swarmer"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_fire_t2_v1",
+    "displayName": "Pyro"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_fire_t4_v1",
+    "displayName": "Apex Pyro"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_heal_t1_v1",
+    "displayName": "Juvenile Healer"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_heal_t2_v1",
+    "displayName": "Healer"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_heal_t3_v1",
+    "displayName": "Mature Healer"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_heal_t4_v1",
+    "displayName": "Apex Healer"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_spectre_t3_v1",
+    "displayName": "Spectre Swarmer"
+  },
+  {
+    "definitionName": "raptor_land_swarmer_spectre_t4_v1",
+    "displayName": "Apex Spectre Swarmer"
+  },
+  {
+    "definitionName": "raptor_matriarch_acid",
+    "displayName": "Acid Matriarch"
+  },
+  {
+    "definitionName": "raptor_matriarch_basic",
+    "displayName": "Matriarch"
+  },
+  {
+    "definitionName": "raptor_matriarch_electric",
+    "displayName": "Paralyzer Matriarch"
+  },
+  {
+    "definitionName": "raptor_matriarch_fire",
+    "displayName": "Pyro Matriarch"
+  },
+  {
+    "definitionName": "raptor_matriarch_healer",
+    "displayName": "Healer Matriarch"
+  },
+  {
+    "definitionName": "raptor_matriarch_spectre",
+    "displayName": "Spectre Matriarch"
+  },
+  {
+    "definitionName": "raptor_queen_easy",
+    "displayName": "Raptor Queen - Final Boss (raptor_queen_easy)"
+  },
+  {
+    "definitionName": "raptor_queen_epic",
+    "displayName": "Raptor Queen - Final Boss (raptor_queen_epic)"
+  },
+  {
+    "definitionName": "raptor_queen_hard",
+    "displayName": "Raptor Queen - Final Boss (raptor_queen_hard)"
+  },
+  {
+    "definitionName": "raptor_queen_normal",
+    "displayName": "Raptor Queen - Final Boss (raptor_queen_normal)"
+  },
+  {
+    "definitionName": "raptor_queen_veryeasy",
+    "displayName": "Raptor Queen - Final Boss (raptor_queen_veryeasy)"
+  },
+  {
+    "definitionName": "raptor_queen_veryhard",
+    "displayName": "Raptor Queen - Final Boss (raptor_queen_veryhard)"
+  },
+  {
+    "definitionName": "raptor_turret_acid_t2_v1",
+    "displayName": "Acid Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_acid_t3_v1",
+    "displayName": "Mature Acid Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_acid_t4_v1",
+    "displayName": "Apex Acid Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_antiair_t2_v1",
+    "displayName": "Anti-Air Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_antiair_t3_v1",
+    "displayName": "Mature Anti-Air Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_antiair_t4_v1",
+    "displayName": "Apex Anti-Air Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_antinuke_t2_v1",
+    "displayName": "Anti-Nuke Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_antinuke_t3_v1",
+    "displayName": "Mature Anti-Nuke Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_basic_t2_v1",
+    "displayName": "Tentacle (raptor_turret_basic_t2_v1)"
+  },
+  {
+    "definitionName": "raptor_turret_burrow_t2_v1",
+    "displayName": "Tentacle (raptor_turret_burrow_t2_v1)"
+  },
+  {
+    "definitionName": "raptor_turret_basic_t3_v1",
+    "displayName": "Mature Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_basic_t4_v1",
+    "displayName": "Apex Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_emp_t2_v1",
+    "displayName": "Paralyzer Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_emp_t3_v1",
+    "displayName": "Mature Paralyzer Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_emp_t4_v1",
+    "displayName": "Apex Paralyzer Tentacle"
+  },
+  {
+    "definitionName": "raptor_turret_meteor_t4_v1",
+    "displayName": "Meteor Tentacle"
+  },
+  {
+    "definitionName": "raptorh1b",
+    "displayName": "Cleaner"
+  },
+  {
+    "definitionName": "resourcecheat",
+    "displayName": "INFINITE RESOURCES"
+  },
+  {
+    "definitionName": "scavbeacon_t1",
+    "displayName": "Teleport Beacon Level 1"
+  },
+  {
+    "definitionName": "scavbeacon_t2",
+    "displayName": "Teleport Beacon Level 2"
+  },
+  {
+    "definitionName": "scavbeacon_t3",
+    "displayName": "Teleport Beacon Level 3"
+  },
+  {
+    "definitionName": "scavbeacon_t4",
+    "displayName": "Teleport Beacon Level 4"
+  },
+  {
+    "definitionName": "scavengerdroppod",
+    "displayName": "Scavenger Droppod"
+  },
+  {
+    "definitionName": "scavengerdroppodfriendly",
+    "displayName": "Friendly Droppod"
+  },
+  {
+    "definitionName": "scavsafeareabeacon",
+    "displayName": "Spreader"
+  },
+  {
+    "definitionName": "scavtacnukespawner",
+    "displayName": "Tactical Nuke Drop"
+  },
+  {
+    "definitionName": "xmasball1_1",
+    "displayName": "Xmas ball (xmasball1_1)"
+  },
+  {
+    "definitionName": "xmasball1_2",
+    "displayName": "Xmas ball (xmasball1_2)"
+  },
+  {
+    "definitionName": "xmasball1_3",
+    "displayName": "Xmas ball (xmasball1_3)"
+  },
+  {
+    "definitionName": "xmasball1_4",
+    "displayName": "Xmas ball (xmasball1_4)"
+  },
+  {
+    "definitionName": "xmasball1_5",
+    "displayName": "Xmas ball (xmasball1_5)"
+  },
+  {
+    "definitionName": "xmasball1_6",
+    "displayName": "Xmas ball (xmasball1_6)"
+  },
+  {
+    "definitionName": "xmasball2_1",
+    "displayName": "Xmas ball (xmasball2_1)"
+  },
+  {
+    "definitionName": "xmasball2_2",
+    "displayName": "Xmas ball (xmasball2_2)"
+  },
+  {
+    "definitionName": "xmasball2_3",
+    "displayName": "Xmas ball (xmasball2_3)"
+  },
+  {
+    "definitionName": "xmasball2_4",
+    "displayName": "Xmas ball (xmasball2_4)"
+  },
+  {
+    "definitionName": "xmasball2_5",
+    "displayName": "Xmas ball (xmasball2_5)"
+  },
+  {
+    "definitionName": "xmasball2_6",
+    "displayName": "Xmas ball (xmasball2_6)"
+  }
+]

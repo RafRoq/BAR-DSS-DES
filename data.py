@@ -83,12 +83,12 @@ BUILDINGS = {
 GENERATORS = {
     "metal_extractor_cortex": {
         "costs": {"metal": 50, "energy": 500, "build": 1870},
-        "provides": {"metal": 2, "energy": -1.5},
+        "provides": {"metal": 2, "energy": -3},
         "storage": {"metal": 50},
     },
     "metal_extractor_armada": {
         "costs": {"metal": 50, "energy": 500, "build": 1800},
-        "provides": {"metal": 2, "energy": -1.5},
+        "provides": {"metal": 2, "energy": -3},
         "storage": {"metal": 50},
     },
     "solar_collector_cortex": {

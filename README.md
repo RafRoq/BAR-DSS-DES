@@ -82,22 +82,9 @@ The simulation is configured by defining a list of tasks in the main script.
     ```
 
 3.  **Analyze the Output:**
-    The script will print a summary of the simulation to the console and/or generate an output file (e.g., an Excel spreadsheet) with the detailed results.
+    The script will output 4 different results, the best one being the graph, the second one being the cookbook.txt, the third one being an excell spreadsheet and last the console print. The graph will allow you to make the best analysis
 
-    ```
-    --- Simulation Complete ---
-    Total Time: 345.2s
-    Final Metal Stored: 87.5
-    Final Energy Stored: 120.1
-    
-    --- Units Produced ---
-    - Blitz: 2
-    
-    --- Buildings Constructed ---
-    - Metal Extractor: 2
-    - Wind Turbine: 1
-    - T1 Vehicle Pad: 1
-    ```
+![Simulation Analysis Graph](graph.png)
 
 ## Project Status
 

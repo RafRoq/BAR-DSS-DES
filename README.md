@@ -4,6 +4,8 @@
 
 A Python-based discrete-time simulator designed to model and analyze the economic efficiency of build orders in the RTS game *Beyond All Reason* (BAR).
 
+BAR DSS DES stands for, Beyond All Reason Decision Support System Discrete Event Simulator
+
 ## What is This?
 
 As a fan of the complex and strategic gameplay of *Beyond All Reason*, I wanted a way to quantitatively compare different opening strategies and economic plans. This tool was built to move beyond "feel" and into data-driven analysis.

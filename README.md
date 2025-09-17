@@ -96,6 +96,7 @@ The simulation is configured by defining a list of tasks in the main script.
 -   Wind turbines have fixed energy output values
 -   The current build order logic is strictly sequential and somewhat conditional.
 -   It never waits to start a task, if starting a task at the moment will stall mid construction it will check if the next task in the list is buildable
+-   Builder cooldown bigger than zero will cause stalls
 
 ## Future Plans (TODO)
 

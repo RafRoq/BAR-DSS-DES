@@ -323,7 +323,7 @@ class GameSimulation:
     
     def _process_energy_conversion(self):
         for unit in self.units:
-            if (unit.energy_conversion_capacity > 0) and (unit.energy_conversion_efficiency > 0):
+            if (unit.energy_conversion_capacity > 0) and (unit.energy_conversion_efficiency > 0) and self.energy > ((self.max_energy * ENERGY_CONVERSION_FLOOR) + unit.energy_conversion_capacity):
                 self.energy_generation -= unit.energy_conversion_capacity
                 self.metal_generation += unit.energy_conversion_capacity * unit.energy_conversion_efficiency
 
@@ -648,6 +648,11 @@ if __name__ == "__main__":
         ),
         (
             "armestor",
+            ["armck", "armcom"],
+            1,
+        ),
+        (
+            "armmakr",
             ["armck", "armcom"],
             1,
         ),

@@ -20,7 +20,7 @@ with open(OUTPUT_FILE, "r") as data:
 
 TIDAL_AVERAGE = 14
 WIND_AVERAGE = 14
-METAL_SPOT_VALUE = 20
+METAL_SPOT_VALUE = 2.3
 ENERGY_CONVERSION_FLOOR = 0.2
 
 class Unit:
@@ -323,7 +323,7 @@ class GameSimulation:
     
     def _process_energy_conversion(self):
         for unit in self.units:
-            if (unit.energy_conversion_capacity > 0) and (unit.energy_conversion_efficiency > 0) and ((self.energy + unit.energy_conversion_capacity) > (self.max_energy * ENERGY_CONVERSION_FLOOR)):
+            if (unit.energy_conversion_capacity > 0) and (unit.energy_conversion_efficiency > 0):
                 self.energy_generation -= unit.energy_conversion_capacity
                 self.metal_generation += unit.energy_conversion_capacity * unit.energy_conversion_efficiency
 
@@ -647,32 +647,17 @@ if __name__ == "__main__":
             1,
         ),
         (
+            "armestor",
+            ["armck", "armcom"],
+            1,
+        ),
+        (
             "armpw",
             ["armlab", "armck"],
             10,
         ),
         (
             "armrock",
-            ["armlab", "armck"],
-            10,
-        ),
-        (
-            "armestor",
-            ["armck", "armcom"],
-            1,
-        ),
-        (
-            "armwin",
-            ["armck", "armcom"],
-            8,
-        ),
-        (
-            "armmakr",
-            ["armck", "armcom"],
-            1,
-        ),
-        (
-            "armham",
             ["armlab", "armck"],
             10,
         ),

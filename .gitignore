@@ -1,0 +1,6 @@
+*
+!*.py
+!README.md
+!*.png
+!*.json
+!.gitignore

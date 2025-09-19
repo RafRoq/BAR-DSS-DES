@@ -102,4 +102,3 @@ The simulation is configured by defining a list of tasks in the main script.
 
 -   [ ] Implement a smarter task assignment system.
 -   [ ] Implement metal extractor upgrade logic.
--   [ ] Complete the data.py file with all the available game data

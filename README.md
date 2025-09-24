@@ -33,11 +33,11 @@ To get a local copy up and running, follow these simple steps.
 
 1.  **Clone the repository:**
     ```sh
-    git clone [https://github.com/](https://github.com/)[Your-GitHub-Username]/[Your-Repo-Name].git
+    git clone ...
     ```
 2.  **Navigate to the project directory:**
     ```sh
-    cd [Your-Repo-Name]
+    cd BAR-DSS-DES
     ```
 3.  **Create and activate a virtual environment (recommended):**
     - On macOS/Linux:
@@ -102,4 +102,3 @@ The simulation is configured by defining a list of tasks in the main script.
 
 -   [ ] Implement a smarter task assignment system.
 -   [ ] Implement metal extractor upgrade logic.
--   [ ] Complete the data.py file with all the available game data

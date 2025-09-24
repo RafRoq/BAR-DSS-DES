@@ -3,6 +3,7 @@ import pandas as pd
 import math
 import matplotlib.pyplot as plt
 import json
+from plots import plot_builder_gantt, generate_build_script
 
 from unit_data_transformer import OUTPUT_FILE
 
@@ -18,10 +19,11 @@ UNITS_DATA = {}
 with open(OUTPUT_FILE, "r") as data:
     UNITS_DATA = json.load(data)
 
-TIDAL_AVERAGE = 14
-WIND_AVERAGE = 14
+TIDAL_AVERAGE = 21
+WIND_AVERAGE = 14.2
 METAL_SPOT_VALUE = 2.3
 ENERGY_CONVERSION_FLOOR = 0.2
+
 
 class Unit:
     _id_counter = 0
@@ -32,7 +34,7 @@ class Unit:
         self.idle = True
         # --------------------
         unit: dict = UNITS_DATA[name_definition]
-        self.name = str(unit['displayName'])
+        self.name = str(unit["displayName"])
         self.name_definition = name_definition
         self.energy_cost = unit["unit"]["energyCost"]
         self.metal_cost = unit["unit"]["metalCost"]
@@ -59,7 +61,11 @@ class Unit:
 
 
 class Task:
+    _task_id_counter = 0
+
     def __init__(self, name: str, builders: list[str], action: str):
+        self.id = Task._task_id_counter
+        Task._task_id_counter += 1
         self.name = name
         self.action = action
         self.builders = builders
@@ -82,7 +88,7 @@ class Task:
         self.completion_time: float = 0
         self.current_status: str = None
         self.status_history: list[tuple] = []
-        self.display_name: str = ''
+        self.display_name: str = ""
 
     def start(self, builders: list[Unit]) -> bool:
         if self.started:
@@ -152,7 +158,7 @@ class GameSimulation:
         self.idle_construction_power: int = 0
         self.total_construction_power: int = 0
         # -----------------------------
-        self.units.append(Unit("armcom"))
+        self.units.append(Unit("corcom"))
 
     def check_builders_availability(
         self, task: Task, builders: list[Unit]
@@ -320,13 +326,22 @@ class GameSimulation:
         for unit in self.units:
             self.max_energy += unit.energy_storage
             self.max_metal += unit.metal_storage
-    
+
     def _process_energy_conversion(self):
         for unit in self.units:
-            if (unit.energy_conversion_capacity > 0) and (unit.energy_conversion_efficiency > 0) and self.energy > ((self.max_energy * ENERGY_CONVERSION_FLOOR) + unit.energy_conversion_capacity):
+            if (
+                (unit.energy_conversion_capacity > 0)
+                and (unit.energy_conversion_efficiency > 0)
+                and self.energy
+                > (
+                    (self.max_energy * ENERGY_CONVERSION_FLOOR)
+                    + unit.energy_conversion_capacity
+                )
+            ):
                 self.energy_generation -= unit.energy_conversion_capacity
-                self.metal_generation += unit.energy_conversion_capacity * unit.energy_conversion_efficiency
-
+                self.metal_generation += (
+                    unit.energy_conversion_capacity * unit.energy_conversion_efficiency
+                )
 
     def calculate_resource_generation(self):
         self.energy_generation = 0
@@ -417,7 +432,7 @@ class GameSimulation:
         elif self.energy != self.max_energy or self.metal != self.max_metal:
             return True
         else:
-            raise RuntimeError("Undefined ending for check_stats()")
+            pass
 
     def _collect_snapshot(self):
         snapshot = {
@@ -432,7 +447,7 @@ class GameSimulation:
         }
         self.timeline_data.append(snapshot)
 
-    def simulate_step(self):
+    def _simulate_step(self):
         self.calculate_resource_storage()
         self.calculate_resource_generation()
         x = self.check_tasks()
@@ -448,7 +463,7 @@ class GameSimulation:
             if self.print_state_next:
                 self.print_state_next = False
                 self.print_status()
-            x = self.simulate_step()
+            x = self._simulate_step()
             if int(self.time) > last_log_time:
                 self._collect_snapshot()
                 last_log_time = int(self.time)
@@ -476,11 +491,11 @@ def run_and_collect_results(build_name: str, tasks: list, max_time: int) -> dict
     timeline_df = pd.DataFrame(timeline_data)
 
     fig, axs = plt.subplots(
-        5,
+        6,
         1,
         figsize=(18, 20),
         sharex=True,
-        gridspec_kw={"height_ratios": [3, 2, 2, 2, 1.5]},
+        gridspec_kw={"height_ratios": [3, 2, 1, 2, 2, 2]},
     )
 
     if not timeline_df.empty:
@@ -583,15 +598,19 @@ def run_and_collect_results(build_name: str, tasks: list, max_time: int) -> dict
                     task.completion_time, y_pos, marker="|", color="green", ms=8, mew=2
                 )
 
+    plot_builder_gantt(axs[5], completed_tasks, game.time)
+    with open("cookbook.txt", "w", encoding="utf-8") as file:
+        file.write(generate_build_script(completed_tasks))
+
     for i in range(4):
         axs[i].legend(loc="upper left")
         axs[i].grid(True, linestyle="--", alpha=0.6)
 
     axs[4].grid(True, linestyle="--", alpha=0.6)
-    axs[4].set_xlabel("Time (seconds)")
+    axs[5].set_xlabel("Time (seconds)")
     axs[4].set_title("Task Gantt Chart")
 
-    fig.suptitle(f"Simulation Analysis: {build_name}", fontsize=18)
+    fig.suptitle(f"Simulation Analysis: {build_name} : {game.time:.1f}s", fontsize=18)
     fig.tight_layout(rect=[0, 0.03, 1, 0.96])
     plt.show()
     print(
@@ -634,38 +653,9 @@ def create_task_list_from_recipe(recipe: list) -> list:
 
 if __name__ == "__main__":
     armada_bot = [
-        ("armmex", ["armcom"], 3),
-        ("armwin", ["armcom"], 4),
-        ("armlab", ["armcom"], 1),
-        ("armck", ["armlab", "armcom"], 1),
-        ("armwin", ["armcom"], 4),
-        ("armmex", ["armcom"], 2),
-        ("armrad", ["armcom"], 1),
-        (
-            "armck",
-            ["armlab", "armck"],
-            1,
-        ),
-        (
-            "armestor",
-            ["armck", "armcom"],
-            1,
-        ),
-        (
-            "armmakr",
-            ["armck", "armcom"],
-            1,
-        ),
-        (
-            "armpw",
-            ["armlab", "armck"],
-            10,
-        ),
-        (
-            "armrock",
-            ["armlab", "armck"],
-            10,
-        ),
+        ("armmex", ["corcom"], 3),
+        ("armwin", ["corcom"], 4),
+        ("armlab", ["corcom"], 1),
     ]
     build_orders = {
         "armada_bot": create_task_list_from_recipe(armada_bot),

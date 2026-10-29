@@ -80,6 +80,21 @@ def test_overflow_when_storage_full():
     assert s.metrics.overflow_metal == pytest.approx(20)
     assert s.metrics.overflow_energy == pytest.approx(300)
     assert s.metrics.idle_bp_seconds == pytest.approx(3000)
+    assert s.metrics.wasted_bp_seconds == pytest.approx(3000)  # idle commander, income unspent
+
+
+def test_wasted_build_power_skips_factories_and_draining_storage():
+    s = State()
+    s._add_unit("cornanotc", +1)
+    # The commander's lab drains metal and energy faster than income: the idle nano could
+    # only make that worse, so it wastes nothing.
+    finish(s, s.start(COM, "corlab"))
+    assert s.metrics.wasted_bp_seconds == 0
+    assert s.metrics.idle_bp_seconds == pytest.approx(200 * s.time)
+    # Now income is unspent: commander and nano waste build power, the idle lab does not.
+    before = s.metrics.wasted_bp_seconds
+    s.advance(until=s.time + 10)
+    assert s.metrics.wasted_bp_seconds - before == pytest.approx((300 + 200) * 10)
 
 
 def test_converter_uses_energy_above_level():

@@ -39,7 +39,7 @@ def main():
     config = SearchConfig(beam_width=args.beam)
     if args.improve is not None:
         config.improve_seconds = args.improve
-    print(f"{'goal':15} {'reached':>9} {'stall s':>8} {'overflow M/E':>14} {'idle BP-s':>10} {'cost':>9} {'search s':>9}"
+    print(f"{'goal':15} {'reached':>9} {'stall s':>8} {'overflow M/E':>14} {'idle BP-s':>10} {'wasted BP-s':>11} {'cost':>9} {'search s':>9}"
           + (f" {'optimum in':>21} {'gap':>7}" if args.exact else ""))
     for name, make in GOALS.items():
         if args.only and not any(word in name for word in args.only):
@@ -49,12 +49,12 @@ def main():
         result = optimize(goal, config)
         took = time.perf_counter() - started
         if result is None:
-            print(f"{name:15} {'no build':>9} {'':>8} {'':>14} {'':>10} {'':>9} {took:9.1f}")
+            print(f"{name:15} {'no build':>9} {'':>8} {'':>14} {'':>10} {'':>11} {'':>9} {took:9.1f}")
             continue
         ev = result.evaluation
         line = (f"{name:15} {ev['finish_time']:9.1f} {ev['stall_seconds']:8.1f} "
                 f"{ev['overflow_metal']:6.0f}/{ev['overflow_energy']:<7.0f} {ev['idle_bp_seconds']:10.0f} "
-                f"{ev['cost']:9.1f} {took:9.1f}")
+                f"{ev['wasted_bp_seconds']:11.0f} {ev['cost']:9.1f} {took:9.1f}")
         if args.exact:
             exact = BranchAndBound(goal).solve(result, time_limit=args.exact)
             best = exact.result.evaluation["cost"]

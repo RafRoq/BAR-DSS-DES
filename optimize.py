@@ -29,6 +29,7 @@ ROWS = [
     ("Overflow metal", "overflow_metal", "{:.0f}"),
     ("Overflow energy", "overflow_energy", "{:.0f}"),
     ("Idle build power (BP-s)", "idle_bp_seconds", "{:.0f}"),
+    ("Wasted build power (BP-s)", "wasted_bp_seconds", "{:.0f}"),
     ("Weighted cost", "cost", "{:.1f}"),
 ]
 

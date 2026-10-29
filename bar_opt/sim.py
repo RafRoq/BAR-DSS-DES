@@ -36,6 +36,9 @@ class Metrics:
     stall_bp_seconds: float = 0.0  # build power lost to stalling: (1 - s) * active BP * dt
     stall_seconds: float = 0.0  # wall-clock time with s < 1
     idle_bp_seconds: float = 0.0  # build power of idle builders * dt
+    # Idle build power that could have helped (builders able to assist, so not factories)
+    # while income exceeded spending on both resources: the build power actually wasted.
+    wasted_bp_seconds: float = 0.0
     overflow_metal: float = 0.0
     overflow_energy: float = 0.0
     metal_produced: float = 0.0
@@ -106,7 +109,7 @@ class State:
     __slots__ = (
         "config", "units", "time", "metal", "energy", "max_metal", "max_energy",
         "metal_make", "mex_metal", "energy_make", "energy_upkeep", "converters",
-        "conv_capacity", "counts", "builder_unit", "builder_job", "idle_bp", "total_bp",
+        "conv_capacity", "counts", "builder_unit", "builder_job", "idle_bp", "total_bp", "idle_helper_bp",
         "jobs", "next_job_id", "spots_used", "free_mexes", "metrics", "recorder", "_last_dt",
     )
 
@@ -133,6 +136,7 @@ class State:
         self.builder_job: list[int] = []  # job id, or -1 when idle
         self.idle_bp = 0.0
         self.total_bp = 0.0
+        self.idle_helper_bp = 0.0  # idle build power of builders that can assist
         self.jobs: dict[int, Job] = {}
         self.next_job_id = 0
         self.spots_used = 0
@@ -153,7 +157,7 @@ class State:
         new.counts = dict(self.counts)
         new.builder_unit = list(self.builder_unit)
         new.builder_job = list(self.builder_job)
-        new.idle_bp, new.total_bp = self.idle_bp, self.total_bp
+        new.idle_bp, new.total_bp, new.idle_helper_bp = self.idle_bp, self.total_bp, self.idle_helper_bp
         new.jobs = {k: j.copy() for k, j in self.jobs.items()}
         new.next_job_id = self.next_job_id
         new.spots_used = self.spots_used
@@ -217,7 +221,7 @@ class State:
         self.next_job_id += 1
         self.jobs[job.id] = job
         self.builder_job[builder] = job.id
-        self.idle_bp -= bp
+        self._set_busy(builder, bp)
         if self.recorder:
             self.recorder.jobs[job.id] = {"unit": unit, "start": self.time, "end": None,
                                           "joins": [(self.time, builder)]}
@@ -232,7 +236,7 @@ class State:
         job.builders.append(builder)
         job.bp += bp
         self.builder_job[builder] = job_id
-        self.idle_bp -= bp
+        self._set_busy(builder, bp)
         if self.recorder:
             self.recorder.jobs[job_id]["joins"].append((self.time, builder))
 
@@ -258,6 +262,11 @@ class State:
 
     def _builder_bp(self, builder: int) -> float:
         return self.units[self.builder_unit[builder]].build_power
+
+    def _set_busy(self, builder: int, bp: float) -> None:
+        self.idle_bp -= bp
+        if self.units[self.builder_unit[builder]].can_assist:
+            self.idle_helper_bp -= bp
 
     def _upgradable(self, target: UnitDef) -> str | None:
         for name, n in self.free_mexes.items():
@@ -295,6 +304,8 @@ class State:
             self.builder_job.append(-1)
             self.idle_bp += u.build_power
             self.total_bp += u.build_power
+            if u.can_assist:
+                self.idle_helper_bp += u.build_power
             if self.recorder:
                 self.recorder.builder_units[builder_id] = name
                 self.recorder.builder_spawn[builder_id] = self.time
@@ -426,6 +437,13 @@ class State:
             m.stall_bp_seconds += (1.0 - s) * active_bp * dt
             m.stall_seconds += dt
         m.idle_bp_seconds += self.idle_bp * dt
+        # Idle builders only waste build power while income exceeds what is being built
+        # (energy before converters): while storage drains or sits empty, more build
+        # power would just stall.
+        surplus_m = metal_in + conv_metal - s * demand_m
+        surplus_e = e_net - s * demand_e
+        if surplus_m > EPS and surplus_e > EPS:
+            m.wasted_bp_seconds += self.idle_helper_bp * dt
         m.overflow_metal += overflow_m * dt
         m.overflow_energy += overflow_e * dt
         m.metal_produced += (metal_in + conv_metal) * dt
@@ -469,6 +487,8 @@ class State:
         job = self.jobs.pop(job_id)
         for b in job.builders:
             self.builder_job[b] = -1
+            if self.units[self.builder_unit[b]].can_assist:
+                self.idle_helper_bp += self._builder_bp(b)
         self.idle_bp += job.bp
         if self.recorder:
             self.recorder.jobs[job_id]["end"] = self.time

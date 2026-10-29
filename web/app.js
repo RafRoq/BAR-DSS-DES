@@ -116,8 +116,8 @@ const WEIGHT_FIELDS = [
     hint: (w) => `100 metal lost to full storage adds ${fmt(w * 100, 1)} s` },
   { key: "overflow_energy", label: "Energy overflow", min: 0, max: 0.1, step: 0.001,
     hint: (w) => `1000 energy lost to full storage adds ${fmt(w * 1000, 1)} s` },
-  { key: "idle", label: "Idle build power", min: 0, max: 0.05, step: 0.0001,
-    hint: (w) => `Commander idle for 1 s adds ${fmt(w * 300, 2)} s` },
+  { key: "idle", label: "Wasted build power", min: 0, max: 0.05, step: 0.0001,
+    hint: (w) => `Commander idle for 1 s while resources pile up adds ${fmt(w * 300, 2)} s` },
 ];
 const CONFIG_FIELDS = [
   { key: "wind_average", label: "Average wind", min: 0, max: 25, step: 0.1, hint: () => "Energy/s per wind turbine (turbines cap at 25)" },
@@ -813,7 +813,8 @@ function renderTiles(run) {
       h("span", { class: `status ${stalled ? "status-critical" : "status-good"}` }, stalled ? "stalled" : "no stall")),
     tile("Overflow", `${fmt(ev.overflow_metal)} M · ${fmt(ev.overflow_energy)} E`, "lost to full storage", "",
       overflow ? h("span", { class: "status status-warning" }, "resources wasted") : h("span", { class: "status status-good" }, "none to speak of")),
-    tile("Idle build power", fmt(ev.idle_bp_seconds), "build-power-seconds"),
+    tile("Wasted build power", fmt(ev.wasted_bp_seconds), "idle while resources piled up, build-power-seconds",
+      "", h("div", { class: "tile-sub" }, `${fmt(ev.idle_bp_seconds)} idle in total, factories included`)),
     tile("Weighted cost", fmt(ev.cost, 1), "finish time + penalties, lower is better"),
   );
 }
@@ -1103,7 +1104,8 @@ const COMPARE_ROWS = [
   ["Stall (lost build-power-seconds)", (ev) => ev.stall_bp_seconds, (v) => fmt(v)],
   ["Overflow metal", (ev) => ev.overflow_metal, (v) => fmt(v)],
   ["Overflow energy", (ev) => ev.overflow_energy, (v) => fmt(v)],
-  ["Idle build power (BP-s)", (ev) => ev.idle_bp_seconds, (v) => fmt(v)],
+  ["Wasted build power (BP-s)", (ev) => ev.wasted_bp_seconds, (v) => fmt(v)],
+  ["Idle build power, all (BP-s)", (ev) => ev.idle_bp_seconds, (v) => fmt(v)],
   ["Weighted cost", (ev) => ev.cost, (v) => fmt(v, 1)],
 ];
 

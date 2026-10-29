@@ -15,12 +15,17 @@ class Weights:
 
     Defaults follow the priority stall > overflow > idle > time: one second of the
     commander's 300 BP fully stalled costs 10 s, 1 metal lost to a full storage 0.2 s,
-    one idle commander-second 2 s."""
+    one wasted commander-second 2 s.
+
+    `idle` applies to wasted build power: idle builders that could have helped (commander,
+    constructors, nano turrets; not factories) while income exceeded spending on both metal
+    and energy. Factories with nothing to build and builders held back because income is
+    fully spent are not penalized, since more build power could not have been paid for."""
 
     stall: float = 1 / 30  # per lost build-power-second
     overflow_metal: float = 0.2  # per metal
     overflow_energy: float = 0.01  # per energy
-    idle: float = 1 / 150  # per idle build-power-second
+    idle: float = 1 / 150  # per wasted build-power-second
 
 
 @dataclass(frozen=True)
@@ -46,7 +51,7 @@ class Goal:
             w.stall * m.stall_bp_seconds
             + w.overflow_metal * m.overflow_metal
             + w.overflow_energy * m.overflow_energy
-            + w.idle * m.idle_bp_seconds
+            + w.idle * m.wasted_bp_seconds
         )
         return {
             "reached": reached,
@@ -56,6 +61,7 @@ class Goal:
             "overflow_metal": m.overflow_metal,
             "overflow_energy": m.overflow_energy,
             "idle_bp_seconds": m.idle_bp_seconds,
+            "wasted_bp_seconds": m.wasted_bp_seconds,
             "cost": finish + penalties,
         }
 

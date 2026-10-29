@@ -34,6 +34,7 @@ class UnitDef:
     tech_level: float
     kind: str
     build_options: tuple[str, ...]
+    description: str = ""
 
     @property
     def is_builder(self) -> bool:
@@ -85,7 +86,23 @@ def _unit_def(name: str, entry: dict) -> UnitDef:
         tech_level=_num(u["techLevel"]) or 1.0,
         kind=kind,
         build_options=options,
+        description=entry.get("description", ""),
     )
+
+
+def tech_depth(units: dict[str, UnitDef], commander: str) -> dict[str, int]:
+    """Number of build steps from the commander to each unit it can eventually build."""
+    depth = {commander: 0}
+    frontier = [commander]
+    while frontier:
+        nxt = []
+        for name in frontier:
+            for option in units[name].build_options:
+                if option in units and option not in depth:
+                    depth[option] = depth[name] + 1
+                    nxt.append(option)
+        frontier = nxt
+    return depth
 
 
 @lru_cache(maxsize=4)

@@ -13,7 +13,7 @@ economy buildings worth their build time to the search.
 import heapq
 from dataclasses import dataclass, field, replace
 
-from .data import FACTORY, MOBILE, NANO
+from .data import FACTORY, MOBILE, NANO, tech_depth
 from .goal import Goal
 from .sim import INF, State
 
@@ -79,17 +79,7 @@ class Planner:
     # ------------------------------------------------------------ setup
 
     def _tech_depth(self) -> dict[str, int]:
-        depth = {self.goal.config.commander: 0}
-        frontier = [self.goal.config.commander]
-        while frontier:
-            nxt = []
-            for name in frontier:
-                for option in self.units[name].build_options:
-                    if option in self.units and option not in depth:
-                        depth[option] = depth[name] + 1
-                        nxt.append(option)
-            frontier = nxt
-        return depth
+        return tech_depth(self.units, self.goal.config.commander)
 
     def _builders_of(self, unit: str) -> list[str]:
         return [n for n, d in self.depth.items() if unit in self.units[n].build_options and d < self.depth[unit]]
@@ -312,40 +302,52 @@ class Planner:
                 round(s.metal / 10), round(s.energy / 50), node.wake < INF)
 
     def search(self, progress=None) -> SearchResult | None:
+        """Run the beam search. `progress(info)` is called after every layer with a dict of
+        layer, frontier, nodes, best_cost and fraction (rough share of the way to the goal
+        of the best frontier node); it may raise SearchCancelled to stop early, after
+        which best_result() still returns the best build found so far."""
         root = Node(self.root.copy(), None, tuple(self.root.idle_builders()), INF)
         root.f = self._score(root)
         frontier = [root]
-        best: Node | None = None
-        best_cost = INF
-        expanded = 0
+        self._best, self._best_cost, self._expanded = None, INF, 0
         for layer in range(self.cfg.max_layers):
             children: dict[tuple, Node] = {}
             for node in frontier:
                 builder = node.pending[0]
                 for action in self._actions(node, builder):
                     child = self._child(node, action)
-                    expanded += 1
+                    self._expanded += 1
                     if child is None:
                         continue
                     if self.goal.satisfied(child.state):
                         cost = self.goal.evaluate(child.state)["cost"]
-                        if cost < best_cost:
-                            best, best_cost = child, cost
+                        if cost < self._best_cost:
+                            self._best, self._best_cost = child, cost
                         continue
                     child.f = self._score(child)
-                    if child.f >= best_cost:
+                    if child.f >= self._best_cost:
                         continue
                     key = self._key(child)
                     if key not in children or child.f < children[key].f:
                         children[key] = child
             frontier = heapq.nsmallest(self.cfg.beam_width, children.values(), key=lambda n: n.f)
             if progress:
-                progress(layer, frontier, best_cost)
+                fraction = 1.0
+                if frontier:
+                    lead = frontier[0].state
+                    fraction = lead.time / max(lead.time + self.remaining_estimate(lead), 1e-9)
+                progress({"layer": layer, "frontier": len(frontier), "nodes": self._expanded,
+                          "best_cost": None if self._best_cost == INF else self._best_cost,
+                          "fraction": fraction})
             if not frontier:
                 break
+        return self.best_result()
+
+    def best_result(self) -> SearchResult | None:
+        best = getattr(self, "_best", None)
         if best is None:
             return None
-        return SearchResult(best.op_list(), self.goal.evaluate(best.state), expanded)
+        return SearchResult(best.op_list(), self.goal.evaluate(best.state), self._expanded)
 
 
 def replay_ops(goal: Goal, ops: list[tuple], record: bool = True) -> State:
@@ -361,18 +363,46 @@ def replay_ops(goal: Goal, ops: list[tuple], record: bool = True) -> State:
     return state
 
 
+class SearchCancelled(Exception):
+    """Raised by a progress callback to stop the search."""
+
+
+def search_runs(config: SearchConfig) -> list[tuple[str, int]]:
+    """The (affordability mode, beam width) runs optimize() performs."""
+    widths = sorted({max(5, config.beam_width // 4), max(5, config.beam_width // 2), config.beam_width})
+    modes = [config.affordability] if config.affordability else ["refined", "conservative"]
+    return [(mode, width) for mode in modes for width in widths]
+
+
 def optimize(goal: Goal, config: SearchConfig | None = None, progress=None) -> SearchResult | None:
     """Beam search at the configured width and at a quarter and half of it, with both
     affordability estimates unless one is configured, keeping the cheapest result. Beam
     search is not monotonic in its width, and small changes to the candidate actions
-    can lead it into a different part of the search space."""
+    can lead it into a different part of the search space.
+
+    `progress(info)` receives the per-layer info of Planner.search plus run, runs, mode,
+    width, and done/cost when a run finishes. Raising SearchCancelled from it stops the
+    search and returns the best build found so far."""
     config = config or SearchConfig()
-    widths = sorted({max(5, config.beam_width // 4), max(5, config.beam_width // 2), config.beam_width})
-    modes = [config.affordability] if config.affordability else ["refined", "conservative"]
+    runs = search_runs(config)
     best = None
-    for mode in modes:
-        for width in widths:
-            result = Planner(goal, replace(config, beam_width=width, affordability=mode)).search(progress)
-            if result and (best is None or result.evaluation["cost"] < best.evaluation["cost"]):
-                best = result
+
+    def keep(result):
+        nonlocal best
+        if result and (best is None or result.evaluation["cost"] < best.evaluation["cost"]):
+            best = result
+
+    for i, (mode, width) in enumerate(runs):
+        planner = Planner(goal, replace(config, beam_width=width, affordability=mode))
+        tag = {"run": i, "runs": len(runs), "mode": mode, "width": width}
+        report = (lambda info, tag=tag: progress({**info, **tag})) if progress else None
+        try:
+            result = planner.search(report)
+        except SearchCancelled:
+            keep(planner.best_result())
+            break
+        keep(result)
+        if progress:
+            progress({**tag, "done": True, "cost": result.evaluation["cost"] if result else None,
+                      "nodes": result.nodes_expanded if result else 0, "fraction": 1.0})
     return best

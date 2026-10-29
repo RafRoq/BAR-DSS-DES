@@ -17,6 +17,7 @@ Model (see README for the deviations from the real game):
 
 import math
 from dataclasses import dataclass, replace
+from typing import NamedTuple
 
 from .config import EconConfig
 from .data import UnitDef, load_units
@@ -65,16 +66,40 @@ class Job:
         return job
 
 
+class Segment(NamedTuple):
+    """One stretch of time with constant rates."""
+
+    t0: float
+    t1: float
+    metal0: float
+    metal1: float
+    energy0: float
+    energy1: float
+    net_metal: float
+    net_energy: float
+    speed: float  # build speed factor s (1 = no stall)
+    idle_bp: float
+    total_bp: float
+    units: int
+    max_metal: float
+    max_energy: float
+    metal_income: float  # extractors, commander and converters
+    metal_spend: float
+    energy_income: float  # production minus upkeep
+    energy_spend: float
+    converter_use: float
+
+
 class Recorder:
     """Full history of one run, for plots and reports. Not copied with the state."""
 
     def __init__(self):
-        # (t0, t1, metal0, metal1, energy0, energy1, net_metal, net_energy, s, idle_bp, total_bp, units)
-        self.segments: list[tuple] = []
+        self.segments: list[Segment] = []
         # job id -> {"unit", "start", "end", "joins": [(time, builder id)]}
         self.jobs: dict[int, dict] = {}
         self.builder_units: dict[int, str] = {}
         self.builder_spawn: dict[int, float] = {}
+        self.unit_events: list[tuple[float, str, int]] = []  # (time, unit, +1 built / -1 removed)
 
 
 class State:
@@ -244,6 +269,8 @@ class State:
         u = self.units[name]
         cfg = self.config
         self.counts[name] = self.counts.get(name, 0) + sign
+        if self.recorder:
+            self.recorder.unit_events.append((self.time, name, sign))
         self.metal_make += sign * u.metal_make
         self.mex_metal += sign * u.extracts_metal * 1000.0 * cfg.metal_per_spot
         energy = u.energy_make
@@ -409,10 +436,12 @@ class State:
         m.metal_from_conversion += conv_metal * dt
 
         if self.recorder:
-            self.recorder.segments.append((
+            self.recorder.segments.append(Segment(
                 t0, self.time, m0, self.metal, e0, self.energy,
                 metal_in + conv_metal - s * demand_m, e_net - use - s * demand_e,
                 s, self.idle_bp, self.total_bp, sum(self.counts.values()),
+                self.max_metal, self.max_energy,
+                metal_in + conv_metal, s * demand_m, e_net, s * demand_e, use,
             ))
 
         finished = []

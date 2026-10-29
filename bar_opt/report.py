@@ -38,12 +38,12 @@ def job_views(state: State) -> list[TaskView]:
     for job in sorted(rec.jobs.values(), key=lambda j: j["start"]):
         end = job["end"] if job["end"] is not None else state.time
         history, last = [], None
-        for t0, t1, *_, s, _idle, _total, _units in rec.segments:
-            if t1 <= job["start"] or t0 >= end or t1 == t0:
+        for seg in rec.segments:
+            if seg.t1 <= job["start"] or seg.t0 >= end or seg.t1 == seg.t0:
                 continue
-            status = "STALLED" if s < 1 - 1e-9 else "WORKING"
+            status = "STALLED" if seg.speed < 1 - 1e-9 else "WORKING"
             if status != last:
-                history.append((max(t0, job["start"]), status))
+                history.append((max(seg.t0, job["start"]), status))
                 last = status
         history.append((end, "COMPLETED"))
         views.append(TaskView(job["unit"], state.units[job["unit"]].display_name, job["start"], end,
@@ -90,25 +90,25 @@ def plot_run(state: State, title: str, path: str | None = None, show: bool = Tru
     """The six-panel analysis figure of main.run_and_collect_results, from exact segments."""
     rec = state.recorder
     segs = rec.segments
-    times = [segs[0][0]] + [s[1] for s in segs] if segs else []
-    metal = [segs[0][2]] + [s[3] for s in segs] if segs else []
-    energy = [segs[0][4]] + [s[5] for s in segs] if segs else []
+    times = [segs[0].t0] + [s.t1 for s in segs] if segs else []
+    metal = [segs[0].metal0] + [s.metal1 for s in segs] if segs else []
+    energy = [segs[0].energy0] + [s.energy1 for s in segs] if segs else []
 
     fig, axs = plt.subplots(6, 1, figsize=(18, 20), sharex=True,
                             gridspec_kw={"height_ratios": [3, 2, 1, 2, 2, 2]})
     if segs:
         axs[0].plot(times, metal, label="Metal Stored", color="grey", lw=2)
         axs[0].plot(times, energy, label="Energy Stored", color="gold", lw=2)
-        edges = [s[0] for s in segs] + [segs[-1][1]]
+        edges = [s.t0 for s in segs] + [segs[-1].t1]
         # Segments under 0.05 s (e.g. energy refilling the converter level after a storage
         # increase) are real but render as spikes; show the rates of the longer ones.
-        shown = [s for s in segs if s[1] - s[0] >= 0.05] or segs
-        rate_edges = [s[0] for s in shown] + [shown[-1][1]]
-        axs[1].stairs([s[6] for s in shown], rate_edges, baseline=None, label="Net Metal/sec", color="grey", lw=2)
-        axs[1].stairs([s[7] for s in shown], rate_edges, baseline=None, label="Net Energy/sec", color="gold", lw=2)
-        axs[2].stairs([s[11] for s in segs], edges, baseline=None, label="Unit Count", color="cyan", lw=2)
-        busy = [s[10] - s[9] for s in segs]
-        idle = [s[9] for s in segs]
+        shown = [s for s in segs if s.t1 - s.t0 >= 0.05] or segs
+        rate_edges = [s.t0 for s in shown] + [shown[-1].t1]
+        axs[1].stairs([s.net_metal for s in shown], rate_edges, baseline=None, label="Net Metal/sec", color="grey", lw=2)
+        axs[1].stairs([s.net_energy for s in shown], rate_edges, baseline=None, label="Net Energy/sec", color="gold", lw=2)
+        axs[2].stairs([s.units for s in segs], edges, baseline=None, label="Unit Count", color="cyan", lw=2)
+        busy = [s.total_bp - s.idle_bp for s in segs]
+        idle = [s.idle_bp for s in segs]
         axs[3].stairs([b + i for b, i in zip(busy, idle)], edges, baseline=busy, fill=True,
                       color="#d62728", label="Idle Power")
         axs[3].stairs(busy, edges, fill=True, color="#2ca02c", label="Busy Power")

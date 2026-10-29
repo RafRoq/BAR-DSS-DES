@@ -15,13 +15,17 @@ from .config import EconConfig
 from .sim import SimError, State
 
 
-def load_yaml_recipe(path: str) -> list[tuple[str, list[str], int]]:
-    with open(path, encoding="utf-8") as f:
-        steps = yaml.safe_load(f) or []
+def parse_steps(steps: list[dict]) -> list[tuple[str, list[str], int]]:
+    """Recipe tuples from YAML-style steps; "name" may be "Display Name - unit" or "unit"."""
     return [
         (step["name"].split(" - ")[-1].strip(), list(step.get("builders", [])), int(step.get("repeat", 1)))
         for step in steps
     ]
+
+
+def load_yaml_recipe(path: str) -> list[tuple[str, list[str], int]]:
+    with open(path, encoding="utf-8") as f:
+        return parse_steps(yaml.safe_load(f) or [])
 
 
 def expand(recipe) -> list[tuple[str, list[str]]]:

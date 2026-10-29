@@ -1,0 +1,4 @@
+matplotlib
+pyyaml
+pytest
+pandas  # legacy/main.py only

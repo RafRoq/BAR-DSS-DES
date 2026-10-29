@@ -1,104 +1,146 @@
-# BAR Economy Simulator & Build Order Analyzer
+# BAR Build Order Optimizer
 
 ![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)
 
-A Python-based discrete-time simulator designed to model and analyze the economic efficiency of build orders in the RTS game *Beyond All Reason* (BAR).
+Finds build orders for *Beyond All Reason* (BAR). You describe a goal ("a T2 bot lab",
+"this set of units"). The optimizer searches for the order, timing and builder assignments
+that reach it as fast as possible without stalling, overflowing storage or leaving build
+power idle. It can also score your own hand-written build orders the same way.
 
-BAR DSS DES stands for, Beyond All Reason Decision Support System Discrete Event Simulator
+BAR DSS DES stands for Beyond All Reason Decision Support System Discrete Event Simulator.
 
-## What is This?
+## Quick start
 
-As a fan of the complex and strategic gameplay of *Beyond All Reason*, I wanted a way to quantitatively compare different opening strategies and economic plans. This tool was built to move beyond "feel" and into data-driven analysis.
+```sh
+pip install -r requirements.txt
+python optimize.py goals/coralab.yaml                                       # fastest T2 bot lab
+python optimize.py goals/armada_bot.yaml --compare recipes/armada_bot.yaml  # vs. a hand build
+python optimize.py --from-recipe recipes/cortex_air.yaml                    # same end state as a hand build
+python -m pytest tests
+```
 
-The simulator processes a predefined build order, step-by-step, tracking resource generation (Metal & Energy), build costs, and build times. The goal is to determine the optimal path to a desired tech level or army composition, identifying potential resource stalls and inefficiencies along the way.
+Each run writes the following to `results/<name>/`:
 
-## Key Features
+| File | Contents |
+|---|---|
+| `graph_optimizer.png` (`graph_hand.png`) | Storage, net income, unit count, build power, task Gantt (stalls in yellow), builder Gantt |
+| `cookbook.txt` | Timed plan: which builder starts or assists what, and when, with builder ids |
+| `optimized.yaml` | The build in the recipe format of `legacy/interface.py`. This loses timing information: it records order and builder types only |
+| `comparison.txt` | Finish time, stall, overflow, idle build power and weighted cost per build |
 
--   **Resource Flow Simulation:** Accurately models Metal and Energy income and expenditure over time.
--   **Task Queue Management:** Processes a sequential build order, respecting dependencies and resource requirements.
--   **Object-Oriented Design:** Uses classes to represent in-game entities like factories, generators, and units, making the system extensible.
--   **State Tracking:** Monitors the game state at each time step, including resource storage, unit counts, and task progress.
--   **Data Output:** Generates a summary of the simulation, providing key metrics for analysis.
+## Goals
 
-## Getting Started
+```yaml
+name: Fastest T2 bot lab
+targets:            # unit name: count. The goal is reached when all are finished.
+  coralab: 1
+max_time: 900
+weights:            # cost = finish_time + stall*lost BP-s + overflow_metal*metal
+  stall: 0.0333     #        + overflow_energy*energy + idle*idle BP-s
+  overflow_metal: 0.2
+  overflow_energy: 0.01
+  idle: 0.0067
+config:             # map and game assumptions, see "Assumptions"
+  wind_average: 14.2
+  mex_spots: 6
+search:             # optional
+  beam_width: 150
+  constructor_cap: 3
+  caps: {cormakr: 12}
+  economy_units: [cormex, corwin, corsolar, cormakr, corestor, cormstor, cornanotc, coradvsol]
+```
 
-To get a local copy up and running, follow these simple steps.
+All penalty terms are reported separately as well as combined in the weighted cost:
+- **Stall:** build power lost to stalling, `(1 - speed) × active build power × time`. Seconds with any stall are reported too.
+- **Overflow:** income lost to full storage.
+- **Idle build power:** build power of finished builders, factories included, that are doing nothing, times the time they spend idle.
 
-### Prerequisites
+Everything is measured until the goal is reached.
 
--   Python 3.13 or higher
--   pip (Python package installer)
+## How it works
 
-### Installation
+`bar_opt/` contains:
 
-1.  **Clone the repository:**
-    ```sh
-    git clone ...
-    ```
-2.  **Navigate to the project directory:**
-    ```sh
-    cd BAR-DSS-DES
-    ```
-3.  **Create and activate a virtual environment (recommended):**
-    - On macOS/Linux:
-      ```sh
-      python3 -m venv venv
-      source venv/bin/activate
-      ```
-    - On Windows:
-      ```sh
-      python -m venv venv
-      .\venv\Scripts\activate
-      ```
-4.  **Install the required packages:**
-    *(You will need to create this file by running `pip freeze > requirements.txt`)*
-    ```sh
-    pip install -r requirements.txt
-    ```
+- **`data.py`**: unit stats and the tech tree (which unit can build which) from `bar_units.json`.
+- **`sim.py`**: an event-driven simulator. Between events every rate is constant, so it jumps
+  from event to event and the results are exact. Events are: a job finishes, a resource reaches 0 or its cap, or energy
+  reaches the converter level. The simulator only answers "what happens if I do X now".
+- **`search.py`**: beam search. Whenever a builder is idle, it branches over:
+  - start a unit now;
+  - wait until that unit can be paid for without stalling;
+  - assist a running job;
+  - wait for the next event.
 
-## Usage
+  Nodes are ranked by cost so far plus an estimate of the remaining time, based on build power and on the metal and energy still missing compared with income.
+  - **Candidates:** the goal, its cheapest tech-tree prerequisites, and an economy list, each capped.
+  - **Pruning:** duplicate states, unaffordable actions, and anything that wouldn't be affordable within 90 s.
+  - **Robustness:** beam search depends on its width and on the exact set of candidate actions, so `optimize()` runs three widths with two affordability estimates and keeps the cheapest result.
+- **`recipe.py`**: replays hand-written recipes in strict order (each step starts once its builders are free; stalls are allowed, nothing is skipped) and exports results as YAML.
+- **`report.py`, `plots.py`**: graphs and cookbook.
 
-The simulation is configured by defining a list of tasks in the main script.
+### Model
 
-1.  **Define Your Build Order:**
-    Open the main script (e.g., `main.py`) and modify the `tasks` list to define your build schedule. Each task specifies what to build and which builders to use.
+| Rule | Model | Source |
+|---|---|---|
+| Build time | `buildtime / build power` of all builders on the job | engine |
+| Cost | Metal and energy drained in proportion to progress | engine |
+| Start | 1000 metal, 1000 energy, storage 1000/1000 *including* the commander's 500 | `game_team_resources.lua` resets storage at GameStart |
+| Storage | Each building adds its own storage | unitdefs |
+| Commander | +2 metal/s, +30 energy/s, 300 build power | `corcom.lua` |
+| Converters | Use energy above `converter_level × storage` (default 0.75), up to capacity, most efficient first. At the level they convert only the surplus | `game_energy_conversion.lua` |
+| Extractors | `extractsmetal × 1000 × metal_per_spot`; 3 E/s upkeep (T1); limited to `mex_spots` | unitdefs |
+| T2 extractor | Uses a free spot, else upgrades a T1. The T1 keeps producing until the T2 finishes, then is removed and its metal refunded | `unit_mex_upgrade_reclaimer.lua` |
+| Wind / tidal | `min(wind_average, 25)` / `tidal_strength`, constant | |
+| Stalling | When a resource is at 0 and demand exceeds income, every job slows by the same factor | approximation, see below |
+| Factories / nanos | Factories build their options and can't assist. Nano turrets only assist. Mobile builders do both | unitdefs |
 
-    ```python
-    # Example of a simple build order definition
-    tasks = [
-        Task(name="metal_extractor", buildable_type="generator", builders_needed=["commander"]),
-        Task(name="metal_extractor", buildable_type="generator", builders_needed=["commander"]),
-        Task(name="wind_turbine", buildable_type="generator", builders_needed=["commander"]),
-        Task(name="t1_vehicle_pad", buildable_type="factory", builders_needed=["commander"]),
-        Task(name="blitz", buildable_type="unit", builders_needed=["t1_vehicle_pad"]),
-        Task(name="blitz", buildable_type="unit", builders_needed=["t1_vehicle_pad"]),
-    ]
-    ```
+### Assumptions (`config:`)
 
-2.  **Run the Simulation:**
-    Execute the main script from your terminal.
-    ```sh
-    python main.py
-    ```
+Defaults: `wind_average 14.2`, `tidal_strength 21`, `metal_per_spot 2.3` (T1 extractor income), `mex_spots 6`,
+`converter_level 0.75`, `start_metal/energy 1000`, `start_*_storage 1000`, `commander corcom`.
 
-3.  **Analyze the Output:**
-    The script will output 4 different results, the best one being the graph, the second one being the cookbook.txt, the third one being an excell spreadsheet and last the console print. The graph will allow you to make the best analysis
+### Where the model differs from the real game
 
-![Simulation Analysis Graph](graph.png)
+These are worth checking in-game or in a replay:
 
-## Project Status
+1. **No travel time.** The commander walking between extractors and builders walking to sites are ignored. Real early builds are slower, mostly in the first 2 minutes.
+2. **No reclaim.** Trees, rocks and wrecks are ignored. On many maps they're significant early metal.
+3. **How resources are split during a stall.** As far as I know, the engine takes resources builder by builder each frame, in unit order. Here they're split proportionally across jobs. Total spending equals income either way, but which job finishes first can differ. BAR's Builder Priority setting (low-priority builders only use leftovers) isn't modelled. *Check:* stall a factory and a constructor together and see whether both slow down or one stops.
+4. **Income timing.** Income arrives continuously here; in BAR it's credited periodically (converters run every 15 frames). This affects timings by under a second.
+5. **Wind is constant** at `min(average, 25)`. The mean of a varying wind capped at 25 is lower than that. Set `wind_average` to what you observe on your map.
+6. **Converter level.** BAR's default is 75%, and players can change it with a slider. Set `converter_level` to match your setting.
+7. **One base, no combat, no unit upkeep** apart from extractors. Overflow is counted as lost; in team games it goes to allies.
+8. **Builders don't leave jobs.** Once assisting, a builder stays until the job finishes. In-game you can pull builders off.
+9. **Quick Start** (the pre-game instant build) is off, which is BAR's default outside the "dominion" mode.
 
-**In-Progress:** This project is under active development. The core simulation logic is functional, but features are still being added and refined.
+To check a result: replay the cookbook in a skirmish or the in-game sandbox. Compare when each building finishes, and the storage and income values at a few timestamps, with the graph.
 
-### Known Limitations
--   Does not currently model unit movement, resource reclamation or travel time.
--   Assumes a constant rate of resource generation from extractors.
--   Wind turbines have fixed energy output values
--   The current build order logic is strictly sequential and somewhat conditional.
--   It never waits to start a task, if starting a task at the moment will stall mid construction it will check if the next task in the list is buildable
--   Builder cooldown bigger than zero will cause stalls
+## Data
 
-## Future Plans (TODO)
+`bar_units.json` is generated from BAR's own unit definitions by `bar_unit_extractor.py`. It contains stats, display names
+and build options, all from the same BAR commit (recorded in the file). To refresh it after a balance patch:
 
--   [ ] Implement a smarter task assignment system.
--   [ ] Implement metal extractor upgrade logic.
+```sh
+git clone --depth 1 --filter=blob:none --sparse https://github.com/beyond-all-reason/Beyond-All-Reason.git
+git -C Beyond-All-Reason sparse-checkout set units language/en
+python bar_unit_extractor.py Beyond-All-Reason
+```
+
+Only Cortex economy is set up by default (the default economy list), but any unit in the data can be a target.
+
+## Recipes
+
+`recipes/` holds hand-written builds in the YAML format used by `legacy/interface.py`:
+
+```yaml
+- name: Metal Extractor - cormex
+  repeat: 2
+  builders: [corcom]          # first builder able to build it starts the job, the others assist
+```
+
+## Legacy
+
+`legacy/` holds the original fixed-step simulator (`main.py`), the Tk build-order editor (`interface.py`), the API
+scraper and the September 2025 unit data. It still runs from that folder: `cd legacy && python main.py`.
+`tests/test_baseline_old_sim.py` keeps its output for the `ARMADA_BOT` recipe as a regression baseline. The new
+core reproduces it to within 0.02 s on every T1 step; `corap` and `corca` differ only because their stats changed in BAR.

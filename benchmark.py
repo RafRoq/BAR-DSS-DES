@@ -3,11 +3,16 @@
     python benchmark.py                 # all goals
     python benchmark.py armada coralab  # only goals whose name contains one of these words
     python benchmark.py --beam 60       # override the beam width
+    python benchmark.py --exact 120     # also run branch and bound for up to 120 s per goal
+
+With --exact, "proven" columns show the interval the true optimum lies in: the
+optimizer's cost is at most `gap` above optimal (0% when proven optimal).
 """
 
 import argparse
 import time
 
+from bar_opt.exact import BranchAndBound
 from bar_opt.goal import Goal
 from bar_opt.search import SearchConfig, optimize
 from optimize import goal_from_recipe
@@ -28,12 +33,14 @@ def main():
     parser.add_argument("only", nargs="*", help="substrings of goal names to run")
     parser.add_argument("--beam", type=int, default=150)
     parser.add_argument("--improve", type=float, default=None, help="improvement time budget in seconds")
+    parser.add_argument("--exact", type=float, default=0, help="branch and bound time budget per goal (seconds)")
     args = parser.parse_args()
 
     config = SearchConfig(beam_width=args.beam)
     if args.improve is not None:
         config.improve_seconds = args.improve
-    print(f"{'goal':15} {'reached':>9} {'stall s':>8} {'overflow M/E':>14} {'idle BP-s':>10} {'cost':>9} {'search s':>9}")
+    print(f"{'goal':15} {'reached':>9} {'stall s':>8} {'overflow M/E':>14} {'idle BP-s':>10} {'cost':>9} {'search s':>9}"
+          + (f" {'optimum in':>21} {'gap':>7}" if args.exact else ""))
     for name, make in GOALS.items():
         if args.only and not any(word in name for word in args.only):
             continue
@@ -45,9 +52,16 @@ def main():
             print(f"{name:15} {'no build':>9} {'':>8} {'':>14} {'':>10} {'':>9} {took:9.1f}")
             continue
         ev = result.evaluation
-        print(f"{name:15} {ev['finish_time']:9.1f} {ev['stall_seconds']:8.1f} "
-              f"{ev['overflow_metal']:6.0f}/{ev['overflow_energy']:<7.0f} {ev['idle_bp_seconds']:10.0f} "
-              f"{ev['cost']:9.1f} {took:9.1f}", flush=True)
+        line = (f"{name:15} {ev['finish_time']:9.1f} {ev['stall_seconds']:8.1f} "
+                f"{ev['overflow_metal']:6.0f}/{ev['overflow_energy']:<7.0f} {ev['idle_bp_seconds']:10.0f} "
+                f"{ev['cost']:9.1f} {took:9.1f}")
+        if args.exact:
+            exact = BranchAndBound(goal).solve(result, time_limit=args.exact)
+            best = exact.result.evaluation["cost"]
+            gap = (ev["cost"] - exact.lower_bound) / ev["cost"]
+            span = f"{best:.1f} (optimal)" if exact.proven else f"[{exact.lower_bound:.1f}, {best:.1f}]"
+            line += f" {span:>21} {100 * gap:6.1f}%"
+        print(line, flush=True)
 
 
 if __name__ == "__main__":

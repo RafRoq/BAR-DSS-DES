@@ -72,7 +72,7 @@ targets:            # unit name: count. The goal is reached when all are finishe
   coralab: 1
 max_time: 900
 weights:            # cost = finish_time + stall*lost BP-s + overflow_metal*metal
-  stall: 0.0333     #        + overflow_energy*energy + idle*idle BP-s
+  stall: 0.0333     #        + overflow_energy*energy + idle*wasted BP-s
   overflow_metal: 0.2
   overflow_energy: 0.01
   idle: 0.0067
@@ -91,7 +91,12 @@ search:             # optional
 All penalty terms are reported separately as well as combined in the weighted cost:
 - **Stall:** build power lost to stalling, `(1 - speed) × active build power × time`. Seconds with any stall are reported too.
 - **Overflow:** income lost to full storage.
-- **Idle build power:** build power of finished builders, factories included, that are doing nothing, times the time they spend idle.
+- **Wasted build power:** build power of idle builders that could have helped (commander, constructors,
+  nano turrets) while income exceeded spending on both metal and energy, times that time. This is what the
+  `idle` weight applies to.
+  - Factories don't count: they can't assist, so an idle factory isn't a decision the build could have made better.
+  - Builders held back while storage drains or sits empty don't count either: more build power would only stall.
+  - Total idle build power, factories included, is still reported and charted.
 
 Everything is measured until the goal is reached.
 
@@ -115,14 +120,18 @@ Everything is measured until the goal is reached.
     T2 constructor exists, so mexes get upgraded as soon as one does.
   - **Pruning:** duplicate states, unaffordable actions, and anything that wouldn't be affordable within 90 s.
   - **Robustness:** beam search depends on its width and on the exact set of candidate actions, so `optimize()` runs three widths with two affordability estimates and keeps the cheapest result.
-- **`improve.py`**: the improvement phase, run after the beam searches for `improve_seconds`. Two
-  operators share the time:
+- **`improve.py`**: the improvement phase, run after the beam searches for up to `improve_seconds`.
+  It stops early once nothing better has turned up for half that time. Three operators share the time:
   - **Step local search:** the build becomes an ordered list of steps ("build U with builder B, assisted
     by H, not before T"). A decoder runs them on the simulator in a few milliseconds. Simulated annealing
     then tries edits: reorder, change builder or assistants, shift waits, add or remove an economy
     building. This finds what the beam's estimate ranks badly, such as a different opening order.
   - **Suffix re-planning:** cut the build at a random decision point and re-plan the rest with a fresh beam
     search using varied settings.
+  - **Rollout re-planning:** the same cut, re-planned by a narrow beam search that ranks each state by
+    actually finishing the build from it (following the best build's remaining steps) instead of by the
+    estimate. That sees what the estimate misses, such as economy paying off later and penalties still to
+    come. Any playout that beats the best build becomes the new best and the new template.
 
   The result is never worse than the beam's.
 - **`exact.py`**: branch and bound over the same decisions as the beam, with a lower bound that never

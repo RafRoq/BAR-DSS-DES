@@ -23,7 +23,7 @@ from .sim import INF, State
 DEFAULT_ECONOMY = ("cormex", "corwin", "corsolar", "cormakr", "corestor", "cormstor", "cornanotc", "coradvsol",
                    "cormoho", "corfus", "cormmkr")
 DEFAULT_CAPS = {"corestor": 2, "cormstor": 1, "cornanotc": 4, "cormakr": 12, "corwin": 40, "corsolar": 12,
-                "coradvsol": 6, "corfus": 4, "cormmkr": 10}
+                "coradvsol": 6, "corfus": 8, "cormmkr": 20}
 
 
 @dataclass
@@ -226,7 +226,7 @@ class Planner:
     def _penalties(self, state: State) -> float:
         m, w = state.metrics, self.goal.weights
         return (w.stall * m.stall_bp_seconds + w.overflow_metal * m.overflow_metal
-                + w.overflow_energy * m.overflow_energy + w.idle * m.idle_bp_seconds)
+                + w.overflow_energy * m.overflow_energy + w.idle * m.wasted_bp_seconds)
 
     # ------------------------------------------------------------ actions
 
@@ -389,12 +389,12 @@ class Planner:
                             self._best, self._best_cost = child, cost
                         continue
                     child.f = self._score(child)
-                    if child.f >= self._best_cost:
+                    if self._pruned(child):
                         continue
                     key = self._key(child)
                     if key not in children or child.f < children[key].f:
                         children[key] = child
-            frontier = heapq.nsmallest(self.cfg.beam_width, children.values(), key=lambda n: n.f)
+            frontier = self._select(list(children.values()))
             if progress:
                 fraction = 1.0
                 if frontier:
@@ -406,6 +406,13 @@ class Planner:
             if not frontier:
                 break
         return self.best_result()
+
+    def _pruned(self, node: Node) -> bool:
+        return node.f >= self._best_cost
+
+    def _select(self, children: list[Node]) -> list[Node]:
+        """The next frontier: the beam_width best children."""
+        return heapq.nsmallest(self.cfg.beam_width, children, key=lambda n: n.f)
 
     def best_result(self) -> SearchResult | None:
         best = getattr(self, "_best", None)

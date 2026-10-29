@@ -1,6 +1,6 @@
 """Improvement phase: polish the best build found by the beam searches.
 
-Two complementary operators share the time budget:
+Three complementary operators share the time budget:
 
 - Step local search (simulated annealing). The build becomes an ordered list of steps:
   "build unit U with builder B, assisted by H", or "builder B assists step k", each with an
@@ -10,13 +10,17 @@ Two complementary operators share the time budget:
   economy building. This finds changes the beam's estimate ranks badly, such as a
   different opening order.
 - Suffix re-planning. Cut the best build at a random decision point, rebuild the exact
-  state there, and run a fresh beam search for the rest with varied settings.
+  state there, and re-plan the rest, either with a fresh beam search with varied settings
+  or with a narrow rollout beam search (RolloutPlanner) that ranks states by finishing
+  the build from them.
 
 Changes are kept only when the build gets cheaper (annealing may wander through worse
 builds, but the best one seen is what is returned), so the result is never worse than
-the build it starts from.
+the build it starts from. The phase ends early once nothing better has turned up for
+half its budget.
 """
 
+import heapq
 import math
 import random
 import time
@@ -88,10 +92,13 @@ def _refs(builder_units: dict[int, str]) -> dict[int, Ref]:
     return out
 
 
-def decode(goal: Goal, steps: list[Step]) -> Decoded:
+def decode(goal: Goal, steps: list[Step], start: State | None = None) -> Decoded:
     """Run steps strictly in order: each starts once its builders exist and are idle and
-    its wait time has passed. Impossible steps are skipped; a deadlock costs INF."""
-    state = State(goal.config)
+    its wait time has passed. Impossible steps are skipped; a deadlock costs INF.
+
+    `start` continues from a copy of that state instead of the game start; the returned
+    ops then continue from it too."""
+    state = start.copy() if start is not None else State(goal.config)
     ops: list = []
     by_type: dict[str, list[int]] = {}
     job_of_step: dict[int, int] = {}
@@ -152,6 +159,87 @@ def decode(goal: Goal, steps: list[Step]) -> Decoded:
             return Decoded(INF)
     evaluation = goal.evaluate(state)
     return Decoded(evaluation["cost"], ops, evaluation)
+
+
+def remaining_steps(steps: list[Step], started: dict[str, int]) -> list[Step]:
+    """The steps left once `started[unit]` builds of each unit have been started: the
+    first that many build steps of each unit are dropped, with the assists aimed at them."""
+    skip = dict(started)
+    kept: list[Step] = []
+    new_index: dict[int, int] = {}
+    for i, step in enumerate(steps):
+        if step.unit is not None:
+            if skip.get(step.unit, 0) > 0:
+                skip[step.unit] -= 1
+                continue
+            new_index[i] = len(kept)
+            kept.append(step)
+        elif step.target in new_index:
+            kept.append(replace(step, target=new_index[step.target]))
+    return kept
+
+
+def _started(node: Node) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    link = node.ops
+    while link is not None:
+        link, op = link
+        if op[0] == "start":
+            counts[op[2]] = counts.get(op[2], 0) + 1
+    return counts
+
+
+class RolloutPlanner(Planner):
+    """Beam search that ranks states by finishing the build from them (a playout) instead
+    of by the remaining-time estimate.
+
+    The playout follows a template build: the steps of the best build found so far that
+    this state has not started yet, decoded from this state. Its cost is real, so it sees
+    what the estimate misses: economy paying off later and penalties still to come. Every
+    playout is also a complete build: one cheaper than the template becomes the new best
+    and the new template (the rollout method), so the result is never worse than the
+    template it started from.
+
+    Per layer, children are first narrowed by the cheap estimate to `screen` times the beam
+    width, and only those get a playout."""
+
+    def __init__(self, goal: Goal, config: SearchConfig, template: SearchResult, screen: int = 3):
+        super().__init__(goal, config)
+        self.found = template
+        self.template = steps_from_result(goal, template)
+        self.screen = screen
+        self.playouts = 0
+
+    def search(self, progress=None, root: Node | None = None, best_cost: float = INF) -> SearchResult | None:
+        return super().search(progress, root, min(best_cost, self.found.evaluation["cost"]))
+
+    def _pruned(self, node: Node) -> bool:
+        # node.f is only an estimate here; cost already paid is a safe bound.
+        return node.state.time + self._penalties(node.state) >= self._best_cost
+
+    def _select(self, children: list[Node]) -> list[Node]:
+        width = self.cfg.beam_width
+        candidates = heapq.nsmallest(width * self.screen, children, key=lambda n: n.f)
+        for node in candidates:
+            node.f = self._playout(node)
+        return heapq.nsmallest(width, candidates, key=lambda n: n.f)
+
+    def _playout(self, node: Node) -> float:
+        self.playouts += 1
+        decoded = decode(self.goal, remaining_steps(self.template, _started(node)), node.state)
+        if decoded.cost == INF:
+            return node.f + 1e6  # the template does not fit this state: rank behind every playout
+        if decoded.cost < self._best_cost - 1e-9:
+            self._best_cost = decoded.cost
+            self.found = SearchResult(node.op_list() + decoded.ops, decoded.evaluation, self._expanded)
+            self.template = steps_from_result(self.goal, self.found)
+        return decoded.cost
+
+    def best_result(self) -> SearchResult | None:
+        beam = super().best_result()
+        if beam is not None and beam.evaluation["cost"] < self.found.evaluation["cost"]:
+            return beam
+        return self.found
 
 
 # ---------------------------------------------------------------- moves
@@ -261,6 +349,8 @@ def improve(goal: Goal, result: SearchResult, config: SearchConfig, seconds: flo
     rng = random.Random(config.seed)
     started = time.perf_counter()
     deadline = started + seconds
+    patience = max(5.0, seconds / 2)  # stop after this long without a better build
+    last_gain = started
     best = result
     tries = accepted = 0
     planner = Planner(goal, config)
@@ -304,22 +394,24 @@ def improve(goal: Goal, result: SearchResult, config: SearchConfig, seconds: flo
                 if decoded.cost < best.evaluation["cost"] - 1e-9:
                     best = SearchResult(decoded.ops, decoded.evaluation, tries)
                     accepted += 1
+                    last_gain = time.perf_counter()
         if not report() or time.perf_counter() >= deadline:
             break
 
         # One suffix re-plan.
-        found = _replan_suffix(goal, best, config, rng, deadline)
+        found = _replan_suffix(goal, best, config, rng, deadline, rollout=rng.random() < 0.5)
         tries += 1
         if found is not None and found.evaluation["cost"] < best.evaluation["cost"] - 1e-9:
             best = found
             accepted += 1
-        if not report():
+            last_gain = time.perf_counter()
+        if not report() or time.perf_counter() - last_gain > patience:
             break
     return best
 
 
 def _replan_suffix(goal: Goal, best: SearchResult, config: SearchConfig, rng: random.Random,
-                   deadline: float) -> SearchResult | None:
+                   deadline: float, rollout: bool = False) -> SearchResult | None:
     cuts = [i for i, op in enumerate(best.ops) if op[0] == "advance"]
     cut = rng.choice([-1] + cuts)  # -1: re-plan from the game start
     prefix = best.ops[:cut + 1]
@@ -330,15 +422,23 @@ def _replan_suffix(goal: Goal, best: SearchResult, config: SearchConfig, rng: ra
     ops = None
     for op in prefix:
         ops = (ops, op)
-    widths = sorted({max(5, config.beam_width // 8), max(5, config.beam_width // 4), max(5, config.beam_width // 2)})
-    planner = Planner(goal, replace(
-        config,
-        beam_width=rng.choice(widths),
-        affordability=rng.choice(["refined", "conservative"]),
-        estimate=rng.choice(["plain", "converters"]),
-        noise=rng.choice([0.0, 0.1, 0.25]),
-        seed=rng.randrange(1 << 30),
-    ))
+    if rollout:
+        planner = RolloutPlanner(goal, replace(
+            config,
+            beam_width=rng.choice([2, 3, 5]),
+            affordability=rng.choice(["refined", "conservative"]),
+        ), best)
+    else:
+        widths = sorted({max(5, config.beam_width // 8), max(5, config.beam_width // 4),
+                         max(5, config.beam_width // 2)})
+        planner = Planner(goal, replace(
+            config,
+            beam_width=rng.choice(widths),
+            affordability=rng.choice(["refined", "conservative"]),
+            estimate=rng.choice(["plain", "converters"]),
+            noise=rng.choice([0.0, 0.1, 0.25]),
+            seed=rng.randrange(1 << 30),
+        ))
 
     def check_time(_info):
         if time.perf_counter() > deadline:

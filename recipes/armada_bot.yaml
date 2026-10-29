@@ -1,0 +1,25 @@
+- name: Metal Extractor - cormex
+  repeat: 2
+  builders:
+  - corcom
+- name: Wind Turbine - corwin
+  repeat: 1
+  builders:
+  - corcom
+- name: Metal Extractor - cormex
+  repeat: 1
+  builders:
+  - corcom
+- name: Wind Turbine - corwin
+  repeat: 6
+  builders:
+  - corcom
+- name: Aircraft Plant - corap
+  repeat: 1
+  builders:
+  - corcom
+- name: Construction Aircraft - corca
+  repeat: 1
+  builders:
+  - corap
+  - corcom

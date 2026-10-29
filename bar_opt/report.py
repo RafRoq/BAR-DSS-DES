@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 import matplotlib.pyplot as plt
 
-from plots import plot_builder_gantt
+from .plots import plot_builder_gantt
 from .sim import State
 
 

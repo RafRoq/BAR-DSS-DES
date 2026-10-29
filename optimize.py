@@ -1,8 +1,8 @@
 """Search the best build order for a goal and compare it with a hand-written one.
 
     python optimize.py goals/coralab.yaml
-    python optimize.py goals/armada_bot.yaml --compare main:ARMADA_BOT
-    python optimize.py --from-recipe "air - cortex.yaml" --no-show
+    python optimize.py goals/armada_bot.yaml --compare recipes/armada_bot.yaml
+    python optimize.py --from-recipe recipes/cortex_air.yaml --no-show
 
 --from-recipe uses the units a hand-written recipe ends with as the goal and compares
 against that recipe. Results go to results/<name>/: optimized.yaml (interface.py recipe

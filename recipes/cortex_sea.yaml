@@ -1,0 +1,123 @@
+- name: Metal Extractor - cormex
+  repeat: 2
+  builders:
+  - corcom
+- name: Wind Turbine - corwin
+  repeat: 1
+  builders:
+  - corcom
+- name: Metal Extractor - cormex
+  repeat: 1
+  builders:
+  - corcom
+- name: Wind Turbine - corwin
+  repeat: 4
+  builders:
+  - corcom
+- name: Bot Lab - corlab
+  repeat: 1
+  builders:
+  - corcom
+- name: Construction Bot - corck
+  repeat: 1
+  builders:
+  - corlab
+- name: Metal Extractor - cormex
+  repeat: 1
+  builders:
+  - corcom
+- name: Wind Turbine - corwin
+  repeat: 3
+  builders:
+  - corcom
+- name: Energy Storage - corestor
+  repeat: 1
+  builders:
+  - corcom
+- name: Construction Bot - corck
+  repeat: 1
+  builders:
+  - corlab
+  - corck
+- name: Energy Converter - cormakr
+  repeat: 2
+  builders:
+  - corck
+  - corck
+- name: Wind Turbine - corwin
+  repeat: 4
+  builders:
+  - corck
+  - corck
+- name: Energy Converter - cormakr
+  repeat: 1
+  builders:
+  - corck
+  - corck
+- name: Wind Turbine - corwin
+  repeat: 3
+  builders:
+  - corcom
+- name: Shipyard - corsy
+  repeat: 1
+  builders:
+  - corcom
+- name: Construction Ship - corcs
+  repeat: 1
+  builders:
+  - corsy
+  - corcom
+- name: Metal Extractor - cormex
+  repeat: 3
+  builders:
+  - corcs
+- name: Construction Ship - corcs
+  repeat: 1
+  builders:
+  - corsy
+- name: Tidal Generator - cortide
+  repeat: 3
+  builders:
+  - corcom
+- name: Supporter - coresupp
+  repeat: 10
+  builders:
+  - corcs
+  - corsy
+- name: Wind Turbine - corwin
+  repeat: 4
+  builders:
+  - corck
+  - corck
+- name: Energy Converter - cormakr
+  repeat: 1
+  builders:
+  - corck
+  - corck
+- name: Wind Turbine - corwin
+  repeat: 7
+  builders:
+  - corck
+  - corck
+- name: Energy Converter - cormakr
+  repeat: 1
+  builders:
+  - corck
+  - corck
+- name: Energy Storage - corestor
+  repeat: 1
+  builders:
+  - corcom
+- name: Energy Converter - cormakr
+  repeat: 1
+  builders:
+  - corcom
+- name: Herring - corpt
+  repeat: 5
+  builders:
+  - corcs
+  - corsy
+- name: Tidal Generator - cortide
+  repeat: 5
+  builders:
+  - corcom

@@ -1,6 +1,7 @@
 import pytest
 
 import main
+from bar_opt.config import EconConfig
 from bar_opt.goal import Goal
 from bar_opt.recipe import replay
 from bar_opt.search import INF, Node, Planner, SearchConfig, optimize, replay_ops
@@ -28,10 +29,24 @@ def test_prerequisites_by_total_chain_cost_and_shared_with_other_targets():
 
 
 def test_t2_constructor_unlocks_extractor_upgrades():
-    goal = Goal(name="fusion", targets={"corack": 1, "corfus": 1}, max_time=1500)
+    planner = Planner(Goal(name="gantry", targets={"corgant": 1}, max_time=1800))
+    assert planner.caps["cormoho"] == planner.goal.config.mex_spots
+    state = planner.root.copy()
+    state._add_unit("cormex", +1)
+    state.spots_used = planner.goal.config.mex_spots  # every spot taken: only upgrades are left
+    state._add_unit("corack", +1)
+    ack = state.builder_unit.index("corack")
+    actions = planner._actions(Node(state, None, (ack,), INF), ack)
+    # Nobody asked for mohos; they are on offer because a T2 constructor exists.
+    assert ("start", ack, "cormoho") in actions
+    job = state.start(ack, "cormoho")
+    assert state.jobs[job].upgrades == "cormex"
+
+
+def test_search_can_choose_extractor_upgrades():
+    goal = Goal(name="gantry", targets={"corgant": 1}, max_time=1800)
     result = optimize(goal, SearchConfig(beam_width=20, affordability="refined"))
     state = replay_ops(goal, result.ops)
-    # Nobody asked for mohos; the optimizer builds them because they pay off.
     assert state.count("cormoho") >= 1
     assert state.count("cormex") + state.count("cormoho") <= goal.config.mex_spots
 
@@ -41,6 +56,38 @@ def test_t2_economy_is_ignored_without_a_t2_constructor():
     state = planner.root.copy()
     actions = planner._actions(Node(state, None, (0,), INF), 0)
     assert not any(a[0] == "start" and a[2] in ("cormoho", "corfus", "cormmkr") for a in actions)
+
+
+def test_remaining_estimate_is_not_capped_at_max_time():
+    # A capped estimate is flat for huge goals, so building economy looked pointless.
+    planner = Planner(Goal(name="juggernaut", targets={"corkorg": 1}, max_time=2400))
+    start = planner.remaining_estimate(planner.root)
+    assert start > planner.goal.max_time
+    richer = planner.root.copy()
+    richer._add_unit("corwin", +1)
+    assert planner.remaining_estimate(richer) < start
+
+
+def test_builder_can_pass_while_others_still_decide():
+    # Without this, a builder with nothing to do killed the branch before a later builder
+    # (the Experimental Gantry, for the Juggernaut) could start its job.
+    planner = Planner(Goal(name="armada", targets={"corap": 1}))
+    state = planner.root.copy()
+    state._add_unit("corlab", +1)
+    lab = state.builder_unit.index("corlab")
+    assert not state.jobs
+    assert ("wait", 0, INF) in planner._actions(Node(state, None, (0, lab), INF), 0)
+    assert ("wait", lab, INF) not in planner._actions(Node(state, None, (lab,), INF), lab)
+
+
+def test_estimate_counts_factory_build_power_for_factory_built_targets():
+    rich = EconConfig(start_metal=1e6, start_energy=1e6, start_metal_storage=1e6, start_energy_storage=1e6)
+    planner = Planner(Goal(name="corca", targets={"corca": 5}, config=rich))
+    state = planner.root.copy()
+    state._add_unit("corap", +1)
+    state._add_unit("corlab", +1)  # a factory that cannot build the target adds nothing
+    # Only build power limits this goal: 5 x 5200 build time over commander 300 + plant 150.
+    assert planner.remaining_estimate(state) == pytest.approx(5 * 5200 / (300 + 150))
 
 
 def test_unreachable_target_is_rejected():

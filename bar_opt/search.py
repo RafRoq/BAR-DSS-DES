@@ -32,11 +32,15 @@ class SearchConfig:
     economy_units: tuple[str, ...] = DEFAULT_ECONOMY
     caps: dict[str, int] = field(default_factory=dict)  # per-unit limits, merged over DEFAULT_CAPS
     constructor_cap: int = 3  # limit for constructors on the path to a target
-    max_layers: int = 2000
+    max_layers: int = 20000  # safety net; searches end when the frontier is empty
     # How running jobs are charged when checking whether something is affordable:
     # "refined" charges what each job still has to pay, "conservative" charges their
     # current rate for the whole duration. None tries both and keeps the cheaper result.
     affordability: str | None = None
+    # Remaining-time estimate: "plain" divides the metal and energy shortfalls by current
+    # income; "converters" also lets converters turn spare energy into metal. Neither wins
+    # on every benchmark goal.
+    estimate: str = "plain"
 
     @classmethod
     def from_dict(cls, values: dict | None) -> "SearchConfig":
@@ -161,13 +165,50 @@ class Planner:
             need_m += amount * u.metal
             need_e += amount * u.energy
             need_bt += amount * u.build_time
-        helpers = sum(self.units[n].build_power for n in state.builder_unit
-                      if self.units[n].kind in (MOBILE, NANO))
+        helpers = 0.0
+        for name in state.builder_unit:
+            u = self.units[name]
+            if u.kind in (MOBILE, NANO) or (u.kind == FACTORY and any(w in u.build_options for w in work)):
+                helpers += u.build_power
         t_bp = need_bt / max(helpers, 1.0)
-        t_m = max(0.0, need_m - state.metal) / max(state.metal_income(), 0.1)
-        e_in = state.energy_income()
-        t_e = max(0.0, need_e - state.energy) / max(e_in, 0.1)
-        return min(max(t_bp, t_m, t_e), self.goal.max_time)
+        short_m, short_e = need_m - state.metal, need_e - state.energy
+        if self.cfg.estimate == "converters":
+            t_res = self._resource_time(state, short_m, short_e)
+        else:
+            t_res = max(max(0.0, short_m) / max(state.metal_income(), 0.1),
+                        max(0.0, short_e) / max(state.energy_income(), 0.1))
+        # Not capped at max_time: for big goals the raw value is what tells the search that
+        # economy is worth building. Nodes past max_time are dropped when they get there.
+        return max(t_bp, t_res)
+
+    @staticmethod
+    def _resource_time(state: State, short_m: float, short_e: float) -> float:
+        """Time for current income to cover a metal and energy shortfall, with converters
+        turning spare energy into metal at the best split between the two."""
+        m_in = max(state.metal_income(), 0.1)
+        e_in = max(state.energy_income(), 0.1)
+        short_m, short_e = max(0.0, short_m), max(0.0, short_e)
+        efficiency = (sum(e * c for e, c in state.converters) / state.conv_capacity) if state.conv_capacity else 0.0
+        top = min(state.conv_capacity, e_in * 0.999)  # energy/s that could go into converters
+
+        def times(use):
+            return short_m / (m_in + use * efficiency), short_e / (e_in - use)
+
+        t_m, t_e = times(0.0)
+        if t_m <= t_e or top <= 0 or efficiency <= 0:
+            return max(t_m, t_e)
+        t_m, t_e = times(top)
+        if t_m >= t_e:
+            return t_m
+        lo, hi = 0.0, top  # metal time falls and energy time rises with conversion: find where they meet
+        for _ in range(40):
+            mid = 0.5 * (lo + hi)
+            t_m, t_e = times(mid)
+            if t_m > t_e:
+                lo = mid
+            else:
+                hi = mid
+        return max(times(hi))
 
     def _score(self, node: Node) -> float:
         return node.state.time + self._penalties(node.state) + self.remaining_estimate(node.state)
@@ -203,6 +244,9 @@ class Planner:
                 done_within = min(left, rate * duration)
                 owed_m += done_within * j.metal
                 owed_e += done_within * j.energy
+        # Converters are ignored here on purpose: making this converter-aware (energy above
+        # the converter level grows only at net - capacity) never helped on the benchmark
+        # goals and made the sea build 60% worse.
         wait = 0.0
         for stored, cap, income, load, owed, cost in (
             (state.metal, state.max_metal, state.metal_income(), load_m, owed_m, u.metal),
@@ -253,7 +297,9 @@ class Planner:
                     actions.append(("assist", builder, job.id))
         for delay in sorted(waits):
             actions.append(("wait", builder, state.time + delay))
-        if state.jobs or node.wake < INF or waits:
+        # Waiting needs something to wait for: a running job, a wake-up, or another builder
+        # still to decide this turn (if nobody starts anything, _settle drops the node).
+        if state.jobs or node.wake < INF or waits or len(node.pending) > 1:
             actions.append(("wait", builder, INF))
         return actions
 

@@ -1,0 +1,10 @@
+# The end state of the hand-written ARMADA_BOT recipe in main.py, reached as fast as possible.
+name: ARMADA_BOT end state
+targets:
+  cormex: 3
+  corwin: 7
+  corap: 1
+  corca: 1
+max_time: 600
+config:
+  mex_spots: 6

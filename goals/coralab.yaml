@@ -1,0 +1,15 @@
+# Fastest Cortex T2 bot lab without stalling, overflowing or idling.
+name: Fastest T2 bot lab
+targets:
+  coralab: 1
+max_time: 900
+weights:
+  stall: 0.0333           # per lost build-power-second (commander fully stalled 1 s = 10 s)
+  overflow_metal: 0.2     # per metal lost to full storage
+  overflow_energy: 0.01   # per energy lost to full storage
+  idle: 0.0067            # per idle build-power-second (idle commander 1 s = 2 s)
+config:
+  wind_average: 14.2
+  metal_per_spot: 2.3
+  mex_spots: 6
+  converter_level: 0.75

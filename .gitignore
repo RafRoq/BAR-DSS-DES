@@ -1,6 +1,12 @@
 *
+!*/
 !*.py
 !README.md
 !*.png
 !*.json
 !.gitignore
+!requirements.txt
+!goals/*.yaml
+__pycache__/
+.pytest_cache/
+.claude/

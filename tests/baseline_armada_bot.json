@@ -1,0 +1,123 @@
+{
+  "end_time": 95.415,
+  "tasks": [
+    {
+      "name": "cormex",
+      "builders": [
+        "corcom"
+      ],
+      "start": 0.0,
+      "end": 6.233,
+      "stalled": false
+    },
+    {
+      "name": "cormex",
+      "builders": [
+        "corcom"
+      ],
+      "start": 6.234,
+      "end": 12.467,
+      "stalled": false
+    },
+    {
+      "name": "corwin",
+      "builders": [
+        "corcom"
+      ],
+      "start": 12.468,
+      "end": 18.067,
+      "stalled": false
+    },
+    {
+      "name": "cormex",
+      "builders": [
+        "corcom"
+      ],
+      "start": 18.068,
+      "end": 24.301,
+      "stalled": false
+    },
+    {
+      "name": "corwin",
+      "builders": [
+        "corcom"
+      ],
+      "start": 24.302,
+      "end": 29.901,
+      "stalled": false
+    },
+    {
+      "name": "corwin",
+      "builders": [
+        "corcom"
+      ],
+      "start": 29.902,
+      "end": 35.501,
+      "stalled": false
+    },
+    {
+      "name": "corwin",
+      "builders": [
+        "corcom"
+      ],
+      "start": 35.502,
+      "end": 41.101,
+      "stalled": false
+    },
+    {
+      "name": "corwin",
+      "builders": [
+        "corcom"
+      ],
+      "start": 41.102,
+      "end": 46.701,
+      "stalled": false
+    },
+    {
+      "name": "corwin",
+      "builders": [
+        "corcom"
+      ],
+      "start": 46.702,
+      "end": 52.301,
+      "stalled": false
+    },
+    {
+      "name": "corwin",
+      "builders": [
+        "corcom"
+      ],
+      "start": 52.302,
+      "end": 57.901,
+      "stalled": false
+    },
+    {
+      "name": "corap",
+      "builders": [
+        "corcom"
+      ],
+      "start": 57.902,
+      "end": 76.835,
+      "stalled": false
+    },
+    {
+      "name": "corca",
+      "builders": [
+        "corap",
+        "corcom"
+      ],
+      "start": 76.836,
+      "end": 95.413,
+      "stalled": false
+    }
+  ],
+  "tasks_not_done": [],
+  "final_metal": 303.454,
+  "final_energy": 40.397,
+  "max_metal": 1250,
+  "max_energy": 1128.5,
+  "metal_spent": 1256.0,
+  "energy_spent": 7025.0,
+  "metal_lost": 0,
+  "energy_lost": 1554.57
+}

@@ -674,17 +674,19 @@ def create_task_list_from_recipe(recipe: list) -> list:
     return final_task_list
 
 
+ARMADA_BOT = [
+    ("cormex", ["corcom"], 2),
+    ("corwin", ["corcom"], 1),
+    ("cormex", ["corcom"], 1),
+    ("corwin", ["corcom"], 6),
+    ("corap", ["corcom"], 1),
+    ("corca", ["corap", "corcom"], 1),
+]
+
+
 if __name__ == "__main__":
-    armada_bot = [
-        ("cormex", ["corcom"], 2),
-        ("corwin", ["corcom"], 1),
-        ("cormex", ["corcom"], 1),
-        ("corwin", ["corcom"], 6),
-        ("corap", ["corcom"], 1),
-        ("corca", ["corap", "corcom"], 1),
-    ]
     build_orders = {
-        "armada_bot": create_task_list_from_recipe(armada_bot),
+        "armada_bot": create_task_list_from_recipe(ARMADA_BOT),
     }
     print("--- Starting all simulations... ---")
     all_results = []

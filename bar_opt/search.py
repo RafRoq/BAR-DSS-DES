@@ -30,6 +30,10 @@ class SearchConfig:
     caps: dict[str, int] = field(default_factory=dict)  # per-unit limits, merged over DEFAULT_CAPS
     constructor_cap: int = 3  # limit for constructors on the path to a target
     max_layers: int = 2000
+    # How running jobs are charged when checking whether something is affordable:
+    # "refined" charges what each job still has to pay, "conservative" charges their
+    # current rate for the whole duration. None tries both and keeps the cheaper result.
+    affordability: str | None = None
 
     @classmethod
     def from_dict(cls, values: dict | None) -> "SearchConfig":
@@ -90,23 +94,40 @@ class Planner:
     def _builders_of(self, unit: str) -> list[str]:
         return [n for n, d in self.depth.items() if unit in self.units[n].build_options and d < self.depth[unit]]
 
-    def prerequisites(self, unit: str) -> list[str]:
-        """Cheapest chain of builders leading to `unit`, excluding the commander."""
-        chain, current = [], unit
-        while self.depth.get(current, 0) > 1:
-            builders = self._builders_of(current)
-            if not builders:
-                break
-            current = min(builders, key=lambda b: (self.depth[b], self.units[b].metal))
-            chain.append(current)
-        return chain[::-1]
+    def prerequisites(self, unit: str, free: frozenset = frozenset()) -> list[str]:
+        """Cheapest chain of builders leading to `unit`, excluding the commander, by total
+        metal + energy / 70 of the chain. Units in `free` (already needed) cost nothing."""
+        best: dict[str, tuple[float, list[str]]] = {self.goal.config.commander: (0.0, [])}
+        for name in sorted(self.depth, key=self.depth.get):
+            if name in best:
+                continue
+            options = [best[b] for b in self._builders_of(name) if b in best and self.units[b].is_builder]
+            if not options:
+                continue
+            cost, chain = min(options, key=lambda o: o[0])
+            u = self.units[name]
+            own = 0.0 if name in free else u.metal + u.energy / 70
+            best[name] = (cost + own, chain + [name])
+        if unit not in best:
+            return []
+        return best[unit][1][:-1]
+
+    def _target_chains(self) -> dict[str, list[str]]:
+        """Prerequisites per target, deepest target first so shallower ones reuse its chain.
+        Targets themselves are free, since they get built anyway."""
+        chains, needed = {}, frozenset(self.goal.targets)
+        for unit in sorted(self.goal.targets, key=lambda t: -self.depth[t]):
+            chains[unit] = self.prerequisites(unit, needed)
+            needed |= set(chains[unit]) | {unit}
+        return chains
 
     def _candidate_units(self) -> tuple[set[str], dict[str, int]]:
         for unit in self.goal.targets:
             if unit not in self.depth:
                 raise ValueError(f"{unit} cannot be built starting from {self.goal.config.commander}")
+        self.chains = self._target_chains()
         allowed = set(self.goal.targets)
-        chain = {p for t in self.goal.targets for p in self.prerequisites(t)}
+        chain = {p for c in self.chains.values() for p in c}
         allowed |= chain
         allowed |= {u for u in self.cfg.economy_units if u in self.depth}
         caps = dict(DEFAULT_CAPS)
@@ -136,7 +157,7 @@ class Planner:
             missing = n - have
             parts = fractions[:missing] + [1.0] * max(0, missing - len(fractions))
             work[unit] = sum(parts)
-            for p in self.prerequisites(unit):
+            for p in self.chains[unit]:
                 if self._owned_or_building(state, p) == 0:
                     work[p] = work.get(p, 0) + 1.0
         if not work:
@@ -164,28 +185,47 @@ class Planner:
 
     # ------------------------------------------------------------ actions
 
-    def _delay_until_affordable(self, state: State, builder: int, unit: str) -> float:
-        """Seconds to wait before `unit` can be built by `builder` without stalling,
-        assuming current income and running jobs at full speed."""
+    def _delay_until_affordable(self, state: State, bp: float, unit: str, duration: float) -> float | None:
+        """Seconds to wait before adding `bp` build power to building `unit` for `duration`
+        seconds can be paid without stalling, assuming current income and running jobs.
+
+        Returns 0 if affordable now, a positive wait, INF if it cannot be paid without
+        stalling even with nothing else running (start anyway: waiting does not help), or
+        None if it only becomes affordable once running jobs finish (wait for an event)."""
         u = self.units[unit]
-        duration = u.build_time / self.units[state.builder_unit[builder]].build_power
-        load_m = load_e = 0.0
+        conservative = self.cfg.affordability == "conservative"
+        load_m = load_e = 0.0  # current spending rate of running jobs
+        owed_m = owed_e = 0.0  # what running jobs still spend within `duration`
         for job in state.jobs.values():
             j = self.units[job.unit]
-            load_m += job.bp / j.build_time * j.metal
-            load_e += job.bp / j.build_time * j.energy
+            rate = job.bp / j.build_time
+            load_m += rate * j.metal
+            load_e += rate * j.energy
+            if conservative:
+                owed_m += rate * j.metal * duration
+                owed_e += rate * j.energy * duration
+            else:
+                left = 1.0 - job.progress / j.build_time
+                done_within = min(left, rate * duration)
+                owed_m += done_within * j.metal
+                owed_e += done_within * j.energy
         wait = 0.0
-        for stored, cap, income, load, cost in (
-            (state.metal, state.max_metal, state.metal_income(), load_m, u.metal),
-            (state.energy, state.max_energy, state.energy_income(), load_e, u.energy),
+        for stored, cap, income, load, owed, cost in (
+            (state.metal, state.max_metal, state.metal_income(), load_m, owed_m, u.metal),
+            (state.energy, state.max_energy, state.energy_income(), load_e, owed_e, u.energy),
         ):
-            net = income - load
-            needed = cost - net * duration  # stock needed at the start
+            spend = bp / u.build_time * cost * duration
+            needed = spend + owed - income * duration  # stock needed at the start
             if needed <= stored:
                 continue
-            if needed > cap or net <= 0:
-                return INF
-            wait = max(wait, (needed - stored) / net)
+            net = income - load
+            if net > 0 and needed <= cap:
+                wait = max(wait, (needed - stored) / net)
+                continue
+            needed_alone = spend - income * duration
+            if income > 0 and needed_alone <= cap:
+                return None
+            return INF
         return wait
 
     def _actions(self, node: Node, builder: int) -> list[tuple]:
@@ -200,7 +240,10 @@ class Planner:
                 continue
             if state.can_start(builder, unit) is not None:
                 continue
-            delay = self._delay_until_affordable(state, builder, unit)
+            delay = self._delay_until_affordable(state, bdef.build_power, unit,
+                                                 self.units[unit].build_time / bdef.build_power)
+            if delay is None:
+                continue
             if delay <= 0.25 or delay == INF:
                 actions.append(("start", builder, unit))
             elif delay <= self.cfg.max_delay:
@@ -208,8 +251,11 @@ class Planner:
                 waits.add(round(delay + 0.05, 1))
         if bdef.can_assist:
             for job in state.jobs.values():
-                remaining = (self.units[job.unit].build_time - job.progress) / job.bp
-                if remaining > 1.0:
+                u = self.units[job.unit]
+                remaining = (u.build_time - job.progress) / (job.bp + bdef.build_power)
+                if remaining <= 1.0:
+                    continue
+                if self._delay_until_affordable(state, bdef.build_power, job.unit, remaining) == 0:
                     actions.append(("assist", builder, job.id))
         for delay in sorted(waits):
             actions.append(("wait", builder, state.time + delay))
@@ -316,12 +362,17 @@ def replay_ops(goal: Goal, ops: list[tuple], record: bool = True) -> State:
 
 
 def optimize(goal: Goal, config: SearchConfig | None = None, progress=None) -> SearchResult | None:
-    """Beam search at the configured width and at a quarter and half of it, keeping the
-    cheapest result: beam search is not monotonic in its width."""
+    """Beam search at the configured width and at a quarter and half of it, with both
+    affordability estimates unless one is configured, keeping the cheapest result. Beam
+    search is not monotonic in its width, and small changes to the candidate actions
+    can lead it into a different part of the search space."""
     config = config or SearchConfig()
+    widths = sorted({max(5, config.beam_width // 4), max(5, config.beam_width // 2), config.beam_width})
+    modes = [config.affordability] if config.affordability else ["refined", "conservative"]
     best = None
-    for width in sorted({max(5, config.beam_width // 4), max(5, config.beam_width // 2), config.beam_width}):
-        result = Planner(goal, replace(config, beam_width=width)).search(progress)
-        if result and (best is None or result.evaluation["cost"] < best.evaluation["cost"]):
-            best = result
+    for mode in modes:
+        for width in widths:
+            result = Planner(goal, replace(config, beam_width=width, affordability=mode)).search(progress)
+            if result and (best is None or result.evaluation["cost"] < best.evaluation["cost"]):
+                best = result
     return best

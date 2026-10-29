@@ -15,6 +15,18 @@ def test_prerequisite_chain_from_tech_tree():
     assert {"corlab", "corck", "coralab", "cormex", "corwin"} <= planner.allowed
 
 
+def test_prerequisites_by_total_chain_cost_and_shared_with_other_targets():
+    planner = Planner(Goal(name="nano", targets={"cornanotc": 1}))
+    # corca (115 metal) is cheaper than corck (120), but its aircraft plant is not
+    assert planner.prerequisites("cornanotc") == ["corlab", "corck"]
+    planner = Planner(Goal(name="t2+nano", targets={"coralab": 1, "cornanotc": 1}))
+    assert planner.chains["cornanotc"] == ["corlab", "corck"]
+    assert "corap" not in planner.allowed
+    planner = Planner(Goal(name="air+nano", targets={"corap": 1, "corca": 1, "cornanotc": 1}))
+    assert planner.chains["cornanotc"] == ["corap", "corca"]
+    assert "corlab" not in planner.allowed
+
+
 def test_unreachable_target_is_rejected():
     with pytest.raises(ValueError):
         Planner(Goal(name="arm", targets={"armlab": 1}))

@@ -239,8 +239,30 @@ class GameSimulation:
 
     def have_dependencies(self, task: Task) -> bool:
         return True
+    
+    def _remove_unit_by_name(self, name):
+        for unit in self.units:
+            if unit.name_definition == name:
+                self.units.remove(unit)
+                return
+    
+    def _is_t2_mex(self, name):
+        t2_names = ['armmoho', 'cormoho', 'legmoho']
+        return name in t2_names
+    
+    def _replace_t1_mex(self, t2_name):
+        T2_TO_T1_MAP = {
+            'armmoho': 'armmex',
+            'cormoho': 'cormex',
+            'legmoho': 'legmex'
+        }
+        t1_name = T2_TO_T1_MAP.get(t2_name)
+        if t1_name:
+            self._remove_unit_by_name(t1_name)
 
     def start_task(self, task: Task) -> bool:
+        if self._is_t2_mex(task.name):
+            self._replace_t1_mex(task.name)
         task.start(self.obtain_builders_reference(task.builders))
         task.start_time = self.time
         task.current_status = "WORKING"
@@ -251,11 +273,11 @@ class GameSimulation:
         return True
 
     def work_on_tasks(self):
-        if not self.task_in_progress:
-            return
-
         self.energy_consumption = 0
         self.metal_consumption = 0
+        if not self.task_in_progress:
+            return
+        
         for task in self.task_in_progress[:]:
             if task.completed:
                 continue
@@ -396,6 +418,7 @@ class GameSimulation:
         elif len(self.tasks) == 0 and len(self.task_in_progress) > 0:
             return True
         for task in self.tasks:
+            
             if (
                 not task.started
                 and not task.completed
@@ -653,9 +676,12 @@ def create_task_list_from_recipe(recipe: list) -> list:
 
 if __name__ == "__main__":
     armada_bot = [
-        ("armmex", ["corcom"], 3),
-        ("armwin", ["corcom"], 4),
-        ("armlab", ["corcom"], 1),
+        ("cormex", ["corcom"], 2),
+        ("corwin", ["corcom"], 1),
+        ("cormex", ["corcom"], 1),
+        ("corwin", ["corcom"], 6),
+        ("corap", ["corcom"], 1),
+        ("corca", ["corap", "corcom"], 1),
     ]
     build_orders = {
         "armada_bot": create_task_list_from_recipe(armada_bot),

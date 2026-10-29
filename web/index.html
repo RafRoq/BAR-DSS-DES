@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BAR Build Optimizer</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/vendor/echarts.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>BAR Build Optimizer</h1>
+    <span class="topbar-note" id="data-note"></span>
+    <button type="button" class="ghost" id="theme-toggle" aria-label="Switch colour theme">Dark theme</button>
+  </header>
+
+  <div class="layout">
+    <aside class="request" aria-label="Optimization request">
+      <section class="card">
+        <div class="card-head">
+          <h2>Goal</h2>
+          <div class="file-row">
+            <select id="goal-file" aria-label="Goal file"></select>
+            <button type="button" id="goal-load">Load</button>
+            <button type="button" id="goal-save">Save as…</button>
+          </div>
+        </div>
+        <label class="field">Name <input id="goal-name" type="text" value="My goal"></label>
+        <div class="field-label">Targets <span class="hint">finished units needed</span></div>
+        <ul class="target-list" id="targets"></ul>
+        <div class="combo" id="target-combo">
+          <input type="text" id="target-search" placeholder="Add a target: search units…" autocomplete="off"
+                 role="combobox" aria-expanded="false" aria-controls="target-results" aria-autocomplete="list">
+          <ul class="combo-list" id="target-results" role="listbox" hidden></ul>
+        </div>
+        <label class="field">Give up after <span class="inline"><input id="max-time" type="number" min="30" step="30" value="900"> s</span></label>
+        <button type="button" class="link" id="goal-from-recipe">Use the recipe editor's end state as targets</button>
+      </section>
+
+      <details class="card" open>
+        <summary><h2>Penalty weights</h2><span class="hint">cost = finish time + penalties</span></summary>
+        <div id="weights"></div>
+        <button type="button" class="link" id="weights-reset">Reset to defaults</button>
+      </details>
+
+      <details class="card">
+        <summary><h2>Map &amp; rules</h2></summary>
+        <div id="config"></div>
+      </details>
+
+      <details class="card">
+        <summary><h2>Search</h2></summary>
+        <div id="search"></div>
+        <label class="field">Affordability estimate
+          <select id="affordability">
+            <option value="both">Try both, keep best (recommended)</option>
+            <option value="refined">Refined only</option>
+            <option value="conservative">Conservative only</option>
+          </select>
+        </label>
+      </details>
+
+      <section class="card run-card">
+        <label class="field">Compare with
+          <select id="compare-with"></select>
+        </label>
+        <button type="button" class="primary" id="run-btn">Optimize</button>
+        <div id="progress" class="progress" hidden aria-live="polite">
+          <div class="progress-head">
+            <strong id="progress-title">Searching…</strong>
+            <span id="progress-elapsed" class="hint"></span>
+          </div>
+          <ol id="progress-runs" class="progress-runs"></ol>
+          <button type="button" id="cancel-btn">Stop and keep best so far</button>
+        </div>
+      </section>
+    </aside>
+
+    <main>
+      <section class="runs" aria-label="Runs in this session">
+        <div class="runs-head">
+          <h2>Runs</h2>
+          <span class="hint">Click a run to inspect it; tick up to 4 to compare.</span>
+        </div>
+        <div id="runs-strip" class="runs-strip">
+          <p class="empty" id="runs-empty">No runs yet. Set a goal on the left and press <strong>Optimize</strong>, or score a hand-written build in the Recipe editor.</p>
+        </div>
+      </section>
+
+      <nav class="tabs" role="tablist" aria-label="Views">
+        <button type="button" role="tab" id="tabbtn-timeline" aria-controls="tab-timeline" aria-selected="true">Timeline</button>
+        <button type="button" role="tab" id="tabbtn-builders" aria-controls="tab-builders" aria-selected="false">Builders &amp; steps</button>
+        <button type="button" role="tab" id="tabbtn-compare" aria-controls="tab-compare" aria-selected="false">Compare</button>
+        <button type="button" role="tab" id="tabbtn-recipe" aria-controls="tab-recipe" aria-selected="false">Recipe editor</button>
+      </nav>
+
+      <section class="tab" id="tab-timeline" role="tabpanel" aria-labelledby="tabbtn-timeline">
+        <div class="placeholder" data-needs-run>Select a run to see its timeline.</div>
+        <div data-run-view hidden>
+          <div class="run-title" id="timeline-title"></div>
+          <div class="tiles" id="tiles"></div>
+          <div class="timeline-grid">
+            <div class="charts">
+              <div class="chart-pair">
+                <figure class="chart-card"><figcaption><h3>Metal stored</h3><div class="legend" id="lg-metal"></div></figcaption><div class="chart" id="ch-metal"></div></figure>
+                <figure class="chart-card"><figcaption><h3>Energy stored</h3><div class="legend" id="lg-energy"></div></figcaption><div class="chart" id="ch-energy"></div></figure>
+              </div>
+              <div class="chart-pair">
+                <figure class="chart-card"><figcaption><h3>Metal flow <span class="hint">per second</span></h3><div class="legend" id="lg-mflow"></div></figcaption><div class="chart" id="ch-mflow"></div></figure>
+                <figure class="chart-card"><figcaption><h3>Energy flow <span class="hint">per second</span></h3><div class="legend" id="lg-eflow"></div></figcaption><div class="chart" id="ch-eflow"></div></figure>
+              </div>
+              <figure class="chart-card"><figcaption><h3>Build power</h3><div class="legend" id="lg-bp"></div></figcaption><div class="chart chart-tall" id="ch-bp"></div></figure>
+              <p class="hint">Zoom with the slider under Build power or Ctrl + scroll on any chart; all charts follow. Click a moment to inspect it. Shaded bands: <span class="band band-stall">stall</span> resources ran out and builds slowed; <span class="band band-overflow">overflow</span> storage was full and income was lost.</p>
+              <details class="table-view">
+                <summary>Data table</summary>
+                <div class="table-scroll" id="segment-table"></div>
+              </details>
+            </div>
+            <aside class="inspector" id="inspector" aria-live="polite"></aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-builders" role="tabpanel" aria-labelledby="tabbtn-builders" hidden>
+        <div class="placeholder" data-needs-run>Select a run to see what each builder does.</div>
+        <div data-run-view hidden>
+          <div class="run-title" id="builders-title"></div>
+          <div class="builders-grid">
+            <figure class="chart-card">
+              <figcaption><h3>Builder activity</h3><div class="legend" id="lg-gantt"></div></figcaption>
+              <div class="chart" id="ch-gantt"></div>
+            </figure>
+            <section class="steps-card">
+              <div class="steps-head">
+                <h3>Build steps</h3>
+                <select id="steps-filter" aria-label="Show steps for builder"></select>
+              </div>
+              <ol class="steps" id="steps"></ol>
+              <div class="steps-actions">
+                <button type="button" id="export-yaml">Download YAML recipe</button>
+                <button type="button" id="copy-steps">Copy steps as text</button>
+                <button type="button" id="save-recipe">Save to recipes/…</button>
+                <button type="button" id="open-in-editor">Open in recipe editor</button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-compare" role="tabpanel" aria-labelledby="tabbtn-compare" hidden>
+        <div class="placeholder" id="compare-empty">Tick two or more runs above to compare them.</div>
+        <div id="compare-view" hidden>
+          <div class="legend legend-runs" id="lg-compare"></div>
+          <div class="table-scroll"><table class="metrics" id="compare-table"></table></div>
+          <div class="chart-pair">
+            <figure class="chart-card"><figcaption><h3>Metal stored</h3></figcaption><div class="chart" id="cmp-metal"></div></figure>
+            <figure class="chart-card"><figcaption><h3>Energy stored</h3></figcaption><div class="chart" id="cmp-energy"></div></figure>
+          </div>
+          <div class="chart-pair">
+            <figure class="chart-card"><figcaption><h3>Busy build power</h3></figcaption><div class="chart" id="cmp-bp"></div></figure>
+            <figure class="chart-card"><figcaption><h3>Goal progress <span class="hint">share of target metal + energy finished</span></h3></figcaption><div class="chart" id="cmp-progress"></div></figure>
+          </div>
+          <p class="hint">Vertical rules mark when each run reached the goal.</p>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-recipe" role="tabpanel" aria-labelledby="tabbtn-recipe" hidden>
+        <div class="recipe-toolbar">
+          <select id="recipe-file" aria-label="Recipe file"></select>
+          <button type="button" id="recipe-load">Load</button>
+          <button type="button" id="recipe-new">New</button>
+          <button type="button" id="recipe-save">Save as…</button>
+          <span class="spacer"></span>
+          <button type="button" class="primary" id="recipe-score">Score against the goal</button>
+        </div>
+        <p class="hint">Steps start strictly in order, each as soon as one idle unit of every listed builder exists. The first listed builder able to build the unit starts it; the others assist. Stalls are allowed, nothing is skipped.</p>
+        <div class="table-scroll">
+          <table class="recipe-table">
+            <thead><tr><th>#</th><th>Unit</th><th>Repeat</th><th>Builders</th><th><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody id="recipe-rows"></tbody>
+          </table>
+        </div>
+        <div class="combo" id="step-combo">
+          <input type="text" id="step-search" placeholder="Add a step: search units…" autocomplete="off"
+                 role="combobox" aria-expanded="false" aria-controls="step-results" aria-autocomplete="list">
+          <ul class="combo-list" id="step-results" role="listbox" hidden></ul>
+        </div>
+        <div id="recipe-messages" class="messages" aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="/app.js"></script>
+</body>
+</html>

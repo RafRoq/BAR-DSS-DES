@@ -8,6 +8,10 @@
 !requirements.txt
 !goals/*.yaml
 !recipes/*.yaml
+!web/*.html
+!web/*.js
+!web/*.css
+!web/vendor/*
 __pycache__/
 .pytest_cache/
 .claude/

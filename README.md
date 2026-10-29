@@ -13,13 +13,49 @@ BAR DSS DES stands for Beyond All Reason Decision Support System Discrete Event 
 
 ```sh
 pip install -r requirements.txt
+python app.py                                                               # web UI, opens your browser
 python optimize.py goals/coralab.yaml                                       # fastest T2 bot lab
 python optimize.py goals/armada_bot.yaml --compare recipes/armada_bot.yaml  # vs. a hand build
 python optimize.py --from-recipe recipes/cortex_air.yaml                    # same end state as a hand build
 python -m pytest tests
 ```
 
-Each run writes the following to `results/<name>/`:
+## Web UI
+
+`python app.py` starts a local server at http://127.0.0.1:8765 and opens it in your browser. Use `--port` to
+pick another port and `--no-browser` to skip opening the browser. It runs only on your machine, needs no
+internet, and reads and writes only `goals/*.yaml` and `recipes/*.yaml`.
+
+- **Request panel (left):**
+  - Build the goal by searching the unit catalog: the 187 units the commander can reach, with costs,
+    economy effects and who builds them.
+  - Tune the penalty weights, map, rules and search with sliders. Each weight shows what it means
+    in seconds.
+  - Load or save goal files, and pick a hand-written build to compare against.
+  - **Optimize** shows live progress for each of the six search runs (best cost so far), with a button to
+    stop and keep the best build found.
+- **Runs:** every optimizer run and every scored recipe from the session. Click one to inspect it; tick up
+  to four to compare.
+- **Timeline:**
+  - Headline figures, then metal and energy stored with their caps and the converter level.
+  - Metal and energy flows (income, building, converters) and build power (busy and idle).
+  - Stall and overflow periods are shaded.
+  - All charts zoom together. Clicking a moment shows the exact state at that time: resources, rates,
+    jobs in progress with their %, idle builders and units owned.
+  - A data table holds every value.
+- **Builders & steps:** one Gantt row per builder, with jobs started and jobs assisted in different colours,
+  stalls underlined and idle time in grey. It's linked to a numbered step list you can follow in-game.
+  Export as a YAML recipe, copy as text, save to `recipes/`, or open in the recipe editor.
+- **Compare:** a metric table with the best value marked, the time each target was reached, and overlaid
+  charts of storage, busy build power and goal progress.
+- **Recipe editor:** write or load a hand-written build. Add steps from the catalog, reorder them, and set
+  builders; invalid builders are flagged. Score it against the goal, or use its end state as the goal.
+
+The charts use [ECharts](https://echarts.apache.org) 5.5.1 (Apache-2.0), included in `web/vendor/`.
+
+## Command line
+
+Each `optimize.py` run writes the following to `results/<name>/`:
 
 | File | Contents |
 |---|---|

@@ -17,9 +17,12 @@ from .data import FACTORY, MOBILE, NANO, tech_depth
 from .goal import Goal
 from .sim import INF, State
 
-DEFAULT_ECONOMY = ("cormex", "corwin", "corsolar", "cormakr", "corestor", "cormstor", "cornanotc", "coradvsol")
+# T2 economy (cormoho, corfus, cormmkr) needs a T2 constructor; the tech tree keeps it out of
+# reach until one exists, so listing it costs nothing for T1 goals.
+DEFAULT_ECONOMY = ("cormex", "corwin", "corsolar", "cormakr", "corestor", "cormstor", "cornanotc", "coradvsol",
+                   "cormoho", "corfus", "cormmkr")
 DEFAULT_CAPS = {"corestor": 2, "cormstor": 1, "cornanotc": 4, "cormakr": 12, "corwin": 40, "corsolar": 12,
-                "coradvsol": 6}
+                "coradvsol": 6, "corfus": 4, "cormmkr": 10}
 
 
 @dataclass
@@ -127,6 +130,7 @@ class Planner:
         for unit, n in self.goal.targets.items():
             caps[unit] = max(n, caps.get(unit, 0) if unit in chain else 0)
         caps["cormex"] = self.goal.config.mex_spots
+        caps["cormoho"] = self.goal.config.mex_spots
         caps.update(self.cfg.caps)
         return allowed, caps
 

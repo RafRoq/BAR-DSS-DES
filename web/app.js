@@ -133,6 +133,8 @@ const SEARCH_FIELDS = [
     hint: (v) => `Runs widths ${Math.max(5, Math.floor(v / 4))}, ${Math.max(5, Math.floor(v / 2))} and ${v}; wider is slower, usually better` },
   { key: "constructor_cap", label: "Max constructors per type", min: 1, max: 8, step: 1, int: true },
   { key: "max_delay", label: "Longest wait considered", min: 10, max: 180, step: 5, int: true, hint: () => "Seconds a builder may wait to start something without stalling" },
+  { key: "improve_seconds", label: "Improvement time", min: 0, max: 180, step: 5, int: true,
+    hint: (v) => (v ? `Then spends ${v} s polishing the best build (reordering steps, re-planning the rest)` : "Off: keep the best beam result as is") },
 ];
 
 const sliders = { weights: {}, config: {}, search: {} };
@@ -510,13 +512,14 @@ function showProgress(job) {
   $("#progress-runs").replaceChildren(...runs.map((r) => {
     const pct = r.status === "done" ? 100 : Math.round(Math.min(1, Math.max(0, r.fraction)) * 100);
     const isBest = r.status === "done" && r.best_cost !== null && r.best_cost === bestCost;
+    const label = r.mode === "improve" ? `improving best build · ${r.width} s` : `${r.mode} · beam ${r.width}`;
     return h("li", { class: `${r.status === "done" ? "done" : ""} ${isBest ? "best" : ""}` },
       h("div", { class: "progress-row" },
-        h("span", {}, `${r.mode} · beam ${r.width}`),
+        h("span", {}, label),
         r.best_cost !== null ? h(isBest ? "strong" : "span", {}, `${isBest ? "best " : ""}cost ${fmt(r.best_cost, 1)}`)
-          : h("span", {}, r.status === "pending" ? "waiting" : `${fmt(r.nodes)} nodes`)),
+          : h("span", {}, r.status === "pending" ? "waiting" : `${fmt(r.nodes)} ${r.mode === "improve" ? "tries" : "nodes"}`)),
       h("div", { class: "bar", role: "progressbar", "aria-valuemin": 0, "aria-valuemax": 100, "aria-valuenow": pct,
-        "aria-label": `${r.mode} beam ${r.width}` }, h("span", { style: `width: ${pct}%` })));
+        "aria-label": label }, h("span", { style: `width: ${pct}%` })));
   }));
 }
 

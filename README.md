@@ -81,9 +81,11 @@ config:             # map and game assumptions, see "Assumptions"
   mex_spots: 6
 search:             # optional
   beam_width: 150
+  improve_seconds: 30 # time spent polishing the best build after the beam searches
   constructor_cap: 3
   caps: {cormakr: 12}
-  economy_units: [cormex, corwin, corsolar, cormakr, corestor, cormstor, cornanotc, coradvsol]
+  economy_units: [cormex, corwin, corsolar, cormakr, corestor, cormstor, cornanotc, coradvsol,
+                  cormoho, corfus, cormmkr]
 ```
 
 All penalty terms are reported separately as well as combined in the weighted cost:
@@ -108,9 +110,26 @@ Everything is measured until the goal is reached.
   - wait for the next event.
 
   Nodes are ranked by cost so far plus an estimate of the remaining time, based on build power and on the metal and energy still missing compared with income.
-  - **Candidates:** the goal, its cheapest tech-tree prerequisites, and an economy list, each capped.
+  - **Candidates:** the goal, its cheapest tech-tree prerequisites, and an economy list, each capped. The
+    list includes T2 economy (moho, fusion, advanced converter); the tech tree keeps it out of reach until a
+    T2 constructor exists, so mexes get upgraded as soon as one does.
   - **Pruning:** duplicate states, unaffordable actions, and anything that wouldn't be affordable within 90 s.
   - **Robustness:** beam search depends on its width and on the exact set of candidate actions, so `optimize()` runs three widths with two affordability estimates and keeps the cheapest result.
+- **`improve.py`**: the improvement phase, run after the beam searches for `improve_seconds`. Two
+  operators share the time:
+  - **Step local search:** the build becomes an ordered list of steps ("build U with builder B, assisted
+    by H, not before T"). A decoder runs them on the simulator in a few milliseconds. Simulated annealing
+    then tries edits: reorder, change builder or assistants, shift waits, add or remove an economy
+    building. This finds what the beam's estimate ranks badly, such as a different opening order.
+  - **Suffix re-planning:** cut the build at a random decision point and re-plan the rest with a fresh beam
+    search using varied settings.
+
+  The result is never worse than the beam's.
+- **`exact.py`**: branch and bound over the same decisions as the beam, with a lower bound that never
+  overestimates. It proves a build optimal, or gives an interval the optimum must lie in.
+  `python benchmark.py --exact 120` reports this for every benchmark goal. "Optimal" means optimal within
+  the search's decision space: waits happen only at the computed "affordable from" times or at the next
+  event.
 - **`recipe.py`**: replays hand-written recipes in strict order (each step starts once its builders are free; stalls are allowed, nothing is skipped) and exports results as YAML.
 - **`report.py`, `plots.py`**: graphs and cookbook.
 

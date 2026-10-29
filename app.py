@@ -161,7 +161,8 @@ def defaults() -> dict:
         "weights": asdict(Weights()),
         "config": asdict(EconConfig()),
         "search": {"beam_width": search.beam_width, "constructor_cap": search.constructor_cap,
-                   "max_delay": search.max_delay, "affordability": "both"},
+                   "max_delay": search.max_delay, "improve_seconds": search.improve_seconds,
+                   "affordability": "both"},
     }
 
 

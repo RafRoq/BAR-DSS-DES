@@ -38,7 +38,7 @@ def test_unreached_goal_serializes_finish_as_null():
 
 def test_optimizer_run_json_jobs_and_builders_line_up():
     goal = Goal.from_dict(GOAL)
-    result = optimize(goal, SearchConfig(beam_width=10, affordability="refined"))
+    result = optimize(goal, SearchConfig(beam_width=10, affordability="refined", improve_seconds=0))
     data = run_json(replay_ops(goal, result.ops), goal, "opt", "optimizer")
     builder_ids = {b["id"] for b in data["builders"]}
     assert all(b in builder_ids for job in data["jobs"] for _, b in job["joins"])

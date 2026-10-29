@@ -11,6 +11,7 @@ economy buildings worth their build time to the search.
 """
 
 import heapq
+import random
 from dataclasses import dataclass, field, replace
 
 from .data import FACTORY, MOBILE, NANO, tech_depth
@@ -41,6 +42,11 @@ class SearchConfig:
     # income; "converters" also lets converters turn spare energy into metal. Neither wins
     # on every benchmark goal.
     estimate: str = "plain"
+    # Improvement phase after the beam searches (bar_opt.improve): seconds to spend
+    # re-planning the rest of the best build from random cut points. 0 disables it.
+    improve_seconds: float = 30.0
+    noise: float = 0.0  # random +-share applied to the remaining-time estimate (diversity)
+    seed: int = 0
 
     @classmethod
     def from_dict(cls, values: dict | None) -> "SearchConfig":
@@ -82,6 +88,7 @@ class Planner:
         self.units = self.root.units
         self.depth = self._tech_depth()
         self.allowed, self.caps = self._candidate_units()
+        self.rng = random.Random(self.cfg.seed)
 
     # ------------------------------------------------------------ setup
 
@@ -211,7 +218,10 @@ class Planner:
         return max(times(hi))
 
     def _score(self, node: Node) -> float:
-        return node.state.time + self._penalties(node.state) + self.remaining_estimate(node.state)
+        estimate = self.remaining_estimate(node.state)
+        if self.cfg.noise:
+            estimate *= 1.0 + self.cfg.noise * (2.0 * self.rng.random() - 1.0)
+        return node.state.time + self._penalties(node.state) + estimate
 
     def _penalties(self, state: State) -> float:
         m, w = state.metrics, self.goal.weights
@@ -351,15 +361,19 @@ class Planner:
         return (round(s.time, 1), tuple(sorted(s.counts.items())), jobs, node.pending,
                 round(s.metal / 10), round(s.energy / 50), node.wake < INF)
 
-    def search(self, progress=None) -> SearchResult | None:
+    def search(self, progress=None, root: Node | None = None, best_cost: float = INF) -> SearchResult | None:
         """Run the beam search. `progress(info)` is called after every layer with a dict of
         layer, frontier, nodes, best_cost and fraction (rough share of the way to the goal
         of the best frontier node); it may raise SearchCancelled to stop early, after
-        which best_result() still returns the best build found so far."""
-        root = Node(self.root.copy(), None, tuple(self.root.idle_builders()), INF)
+        which best_result() still returns the best build found so far.
+
+        `root` starts from a given decision point instead of the game start, and
+        `best_cost` makes the search return only builds cheaper than that."""
+        if root is None:
+            root = Node(self.root.copy(), None, tuple(self.root.idle_builders()), INF)
         root.f = self._score(root)
         frontier = [root]
-        self._best, self._best_cost, self._expanded = None, INF, 0
+        self._best, self._best_cost, self._expanded = None, best_cost, 0
         for layer in range(self.cfg.max_layers):
             children: dict[tuple, Node] = {}
             for node in frontier:
@@ -418,10 +432,14 @@ class SearchCancelled(Exception):
 
 
 def search_runs(config: SearchConfig) -> list[tuple[str, int]]:
-    """The (affordability mode, beam width) runs optimize() performs."""
+    """The (affordability mode, beam width) runs optimize() performs, followed by
+    ("improve", seconds) when the improvement phase is on."""
     widths = sorted({max(5, config.beam_width // 4), max(5, config.beam_width // 2), config.beam_width})
     modes = [config.affordability] if config.affordability else ["refined", "conservative"]
-    return [(mode, width) for mode in modes for width in widths]
+    runs = [(mode, width) for mode in modes for width in widths]
+    if config.improve_seconds > 0:
+        runs.append(("improve", int(round(config.improve_seconds))))
+    return runs
 
 
 def optimize(goal: Goal, config: SearchConfig | None = None, progress=None) -> SearchResult | None:
@@ -442,7 +460,10 @@ def optimize(goal: Goal, config: SearchConfig | None = None, progress=None) -> S
         if result and (best is None or result.evaluation["cost"] < best.evaluation["cost"]):
             best = result
 
+    cancelled = False
     for i, (mode, width) in enumerate(runs):
+        if mode == "improve":
+            continue
         planner = Planner(goal, replace(config, beam_width=width, affordability=mode))
         tag = {"run": i, "runs": len(runs), "mode": mode, "width": width}
         report = (lambda info, tag=tag: progress({**info, **tag})) if progress else None
@@ -450,9 +471,30 @@ def optimize(goal: Goal, config: SearchConfig | None = None, progress=None) -> S
             result = planner.search(report)
         except SearchCancelled:
             keep(planner.best_result())
+            cancelled = True
             break
         keep(result)
-        if progress:
-            progress({**tag, "done": True, "cost": result.evaluation["cost"] if result else None,
-                      "nodes": result.nodes_expanded if result else 0, "fraction": 1.0})
+        if not _report(progress, {**tag, "done": True, "cost": result.evaluation["cost"] if result else None,
+                                  "nodes": result.nodes_expanded if result else 0, "fraction": 1.0}):
+            cancelled = True
+            break
+
+    if best is not None and config.improve_seconds > 0 and not cancelled:
+        from .improve import improve  # imports this module
+
+        tag = {"run": len(runs) - 1, "runs": len(runs), "mode": "improve", "width": runs[-1][1]}
+        report = (lambda info: progress({**info, **tag})) if progress else None
+        best = improve(goal, best, config, config.improve_seconds, report)
+        _report(progress, {**tag, "done": True, "cost": best.evaluation["cost"], "fraction": 1.0})
     return best
+
+
+def _report(progress, info: dict) -> bool:
+    """Send a progress update; False if the callback asked to stop."""
+    if progress is None:
+        return True
+    try:
+        progress(info)
+    except SearchCancelled:
+        return False
+    return True

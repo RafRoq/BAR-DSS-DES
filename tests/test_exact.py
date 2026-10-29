@@ -13,7 +13,7 @@ def test_lower_bound_never_exceeds_the_cost_of_a_real_build():
     its final cost must not be above what the build actually costs."""
     for targets in (ARMADA, {"corlab": 1, "corck": 1}, {"coralab": 1}):
         goal = Goal(name="g", targets=targets, max_time=900)
-        result = optimize(goal, SearchConfig(beam_width=20, affordability="refined"))
+        result = optimize(goal, SearchConfig(beam_width=20, affordability="refined", improve_seconds=0))
         final = result.evaluation["cost"]
         bb = BranchAndBound(goal)
         state = State(goal.config)
@@ -39,7 +39,7 @@ def test_small_goal_is_proven_optimal():
 
 def test_budget_stop_reports_an_interval():
     goal = Goal(name="g", targets=ARMADA, max_time=600)
-    incumbent = optimize(goal, SearchConfig(beam_width=20, affordability="refined"))
+    incumbent = optimize(goal, SearchConfig(beam_width=20, affordability="refined", improve_seconds=0))
     result = BranchAndBound(goal).solve(incumbent, node_limit=500)
     assert not result.proven
     assert result.lower_bound <= result.result.evaluation["cost"]

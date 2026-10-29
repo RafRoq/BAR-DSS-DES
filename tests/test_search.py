@@ -45,7 +45,7 @@ def test_t2_constructor_unlocks_extractor_upgrades():
 
 def test_search_can_choose_extractor_upgrades():
     goal = Goal(name="gantry", targets={"corgant": 1}, max_time=1800)
-    result = optimize(goal, SearchConfig(beam_width=20, affordability="refined"))
+    result = optimize(goal, SearchConfig(beam_width=20, affordability="refined", improve_seconds=0))
     state = replay_ops(goal, result.ops)
     assert state.count("cormoho") >= 1
     assert state.count("cormex") + state.count("cormoho") <= goal.config.mex_spots
@@ -96,7 +96,7 @@ def test_unreachable_target_is_rejected():
 
 
 def test_search_result_replays_exactly_and_beats_hand_recipe():
-    result = optimize(ARMADA_GOAL, SearchConfig(beam_width=20))
+    result = optimize(ARMADA_GOAL, SearchConfig(beam_width=20, improve_seconds=0))
     assert result is not None and result.evaluation["reached"]
     state = replay_ops(ARMADA_GOAL, result.ops)
     assert ARMADA_GOAL.evaluate(state) == pytest.approx(result.evaluation)

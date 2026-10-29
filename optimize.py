@@ -71,6 +71,8 @@ def main():
     parser.add_argument("goal", nargs="?", help="goal YAML file")
     parser.add_argument("--from-recipe", help="use the end state of this recipe as the goal and compare with it")
     parser.add_argument("--beam", type=int, help="beam width (default: goal file's search.beam_width or 150)")
+    parser.add_argument("--improve", type=float,
+                        help="seconds spent polishing the best build after the beam searches (0 turns it off)")
     parser.add_argument("--compare", help="hand-written recipe: a YAML file or module:VARIABLE")
     parser.add_argument("--out", default="results", help="output directory")
     parser.add_argument("--no-show", action="store_true", help="save graphs without opening them")
@@ -89,10 +91,13 @@ def main():
         parser.error("give a goal file or --from-recipe")
     if args.beam:
         search.beam_width = args.beam
+    if args.improve is not None:
+        search.improve_seconds = args.improve
     out = os.path.join(args.out, name)
     os.makedirs(out, exist_ok=True)
 
-    print(f"Optimizing '{goal.name}' (targets {goal.targets}), beam width {search.beam_width}...")
+    print(f"Optimizing '{goal.name}' (targets {goal.targets}), beam width {search.beam_width}, "
+          f"improvement {search.improve_seconds:g} s...")
     started = time.perf_counter()
     result = optimize(goal, search)
     if result is None:

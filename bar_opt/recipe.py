@@ -57,12 +57,16 @@ def _blocked_reason(state: State, unit: str, builder_types: list[str]) -> str:
 
 
 def replay(recipe, config: EconConfig | None = None, max_time: float = 1200.0,
-           record: bool = True) -> tuple[State, list[str]]:
-    """Run a recipe. Returns the final state and a list of problems (steps never started)."""
+           record: bool = True, stop_when=None) -> tuple[State, list[str]]:
+    """Run a recipe. Returns the final state and a list of problems (steps never started).
+
+    stop_when(state) -> bool ends the run early, e.g. as soon as a goal is reached."""
     state = State(config, record=record)
     steps = expand(recipe)
     i = 0
     while i < len(steps) or state.jobs:
+        if stop_when and stop_when(state):
+            return state, []
         while i < len(steps):
             unit, builder_types = steps[i]
             picked = _pick_builders(state, unit, builder_types)

@@ -6,7 +6,8 @@ from collections import defaultdict
 # Assume your Task and Unit classes are defined elsewhere as you've shown
 # from your_module import Task, Unit
 
-def plot_builder_gantt(ax: plt.Axes, completed_tasks: List[Any], simulation_duration: float):
+def plot_builder_gantt(ax: plt.Axes, completed_tasks: List[Any], simulation_duration: float,
+                       spawn_times: dict | None = None):
     """
     Generates a Gantt chart showing busy and idle periods for each builder unit.
 
@@ -14,7 +15,9 @@ def plot_builder_gantt(ax: plt.Axes, completed_tasks: List[Any], simulation_dura
         ax: The Matplotlib Axes object to draw the chart on.
         completed_tasks: A list of completed Task objects.
         simulation_duration: The total duration of the simulation, for showing final idle time.
+        spawn_times: Optional {builder label: time it was built}, so idle time starts there.
     """
+    spawn_times = spawn_times or {}
     builder_activity = []
     
     # 1. Extract activity periods for each builder from the tasks
@@ -39,7 +42,7 @@ def plot_builder_gantt(ax: plt.Axes, completed_tasks: List[Any], simulation_dura
     # 2. Prepare plot axes and data structures
     unique_builders = sorted(list(set(item['label'] for item in builder_activity)))
     builder_to_y = {name: i for i, name in enumerate(unique_builders)}
-    last_task_end_time = {builder: 0.0 for builder in unique_builders}
+    last_task_end_time = {builder: spawn_times.get(builder, 0.0) for builder in unique_builders}
 
     ax.set_yticks(range(len(unique_builders)), labels=unique_builders)
     ax.set_ylim(-0.5, len(unique_builders) - 0.5)

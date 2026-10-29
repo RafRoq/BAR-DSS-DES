@@ -148,9 +148,19 @@ def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
     with open(WIDGET, encoding="utf-8") as f:
         lua.execute(f.read())
     w = g.widget
+    w.SetConfigData(w, to_lua({"x": 0.02, "y": 0.72}))  # saved by the first version: under the minimap
     w.Initialize(w)
     w.DrawScreen(w)
     assert any("waiting for the first step" in p for p in printed)
+    # The old position is dropped: the panel starts at the top right, and its title can be dragged.
+    assert not w.MousePress(w, 100, 770, 1)
+    assert w.MousePress(w, 1890, 915, 1)
+    w.MouseMove(w, 1790, 865, -100, -50)
+    w.MouseRelease(w)
+    saved = from_lua(w.GetConfigData(w))
+    assert saved["version"] == 2 and saved["x"] < 0.95 and saved["y"] == pytest.approx(0.86 - 50 / 1080, abs=0.01)
+    actions["buildguide_reset"]("buildguide_reset")
+    assert "x" not in from_lua(w.GetConfigData(w))
 
     # Play the plan 3 s late; the first try of step 2 is cancelled and restarted.
     events = sorted([(s["start"] + 3, 0, k) for k, s in enumerate(plan["steps"])]

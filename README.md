@@ -72,7 +72,8 @@ only displays; it never gives orders.
      builders and planned times.
    - It also shows how many seconds ahead or behind plan you are, and your metal and energy next to the
      plan's.
-   - Drag it by its title. `/luaui buildguide_reload` reloads the plan; `/luaui buildguide_toggle` hides it.
+   - It starts at the top right, under the top bar. Drag it by its title; `/luaui buildguide_reset` puts it
+     back. `/luaui buildguide_reload` reloads the plan; `/luaui buildguide_toggle` hides it.
 3. **Compare.** The widget logs every game to `LuaUI/Config/build_guide_log_<date>.json`: when each step
    really started and finished, plus your resources every 5 s. The **In-game** tab lists these logs.
    Open one to see:

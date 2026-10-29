@@ -10,7 +10,9 @@ local widget = widget ---@type Widget
 -- During the game it writes what actually happened to LuaUI/Config/build_guide_log_<date>.json
 -- (one file per game). Load it in the optimizer's web UI (In-game tab) to compare plan and game.
 --
--- Drag the panel by its title. Commands: /luaui buildguide_reload, /luaui buildguide_toggle.
+-- The panel starts at the top right, under the top bar; drag it by its title. Commands:
+-- /luaui buildguide_reload (re-read the plan), /luaui buildguide_toggle (hide or show),
+-- /luaui buildguide_reset (back to the default position).
 
 function widget:GetInfo()
 	return {
@@ -19,7 +21,7 @@ function widget:GetInfo()
 		author = "BAR build order optimizer",
 		date = "2026",
 		license = "GNU GPL, v2 or later",
-		layer = 0,
+		layer = -10, -- lower layers draw on top and get the mouse first: above the minimap (0)
 		enabled = true,
 	}
 end
@@ -50,7 +52,9 @@ local lastSample, lastSave = -SAMPLE_EVERY, 0
 local vsx, vsy = spGetViewGeometry()
 local uiScale = tonumber(Spring.GetConfigFloat("ui_scale", 1) or 1)
 local font
-local pos = { x = 0.02, y = 0.72 } -- top-left corner, as a share of the screen
+local CONFIG_VERSION = 2 -- positions saved by older versions (top left, under the minimap) are dropped
+local DEFAULT_TOP = 0.86 -- share of the screen height: just under BAR's top bar
+local pos -- top-left corner as a share of the screen once dragged; nil = default, at the top right
 local panel = { x1 = 0, y1 = 0, x2 = 0, y2 = 0, titleY = 0 }
 local dragging = false
 
@@ -276,8 +280,6 @@ function widget:DrawScreen()
 	local row = size * 1.45
 	local width = 300 * uiScale -- grows to fit the text
 	local pad = 8 * uiScale
-	local x1 = math.floor(pos.x * vsx)
-	local top = math.floor(pos.y * vsy)
 
 	local lines = {}
 	local function add(s, r, g, b) lines[#lines + 1] = { s, r, g, b } end
@@ -358,6 +360,11 @@ function widget:DrawScreen()
 		end
 	end
 	local height = #lines * row + pad * 2
+	local margin = math.floor(vsx * 0.01)
+	local x1 = pos and math.floor(pos.x * vsx) or (vsx - width - margin)
+	local top = math.floor((pos and pos.y or DEFAULT_TOP) * vsy)
+	x1 = math.max(0, math.min(vsx - width, x1)) -- always fully on screen
+	top = math.max(height, math.min(vsy, top))
 	panel.x1, panel.y2 = x1, top
 	panel.x2, panel.y1 = x1 + width, top - height
 	panel.titleY = top - pad - row
@@ -389,6 +396,7 @@ end
 
 function widget:MouseMove(x, y, dx, dy)
 	if dragging then
+		pos = pos or { x = panel.x1 / vsx, y = panel.y2 / vsy }
 		pos.x = math.max(0, math.min(1, pos.x + dx / vsx))
 		pos.y = math.max(0, math.min(1, pos.y + dy / vsy))
 	end
@@ -401,12 +409,12 @@ end
 -- ------------------------------------------------------------------ setup
 
 function widget:GetConfigData()
-	return { x = pos.x, y = pos.y, hidden = hidden }
+	return { version = CONFIG_VERSION, x = pos and pos.x, y = pos and pos.y, hidden = hidden }
 end
 
 function widget:SetConfigData(data)
-	if data.x and data.y then
-		pos.x, pos.y = data.x, data.y
+	if data.version == CONFIG_VERSION and data.x and data.y then
+		pos = { x = data.x, y = data.y }
 	end
 	hidden = data.hidden == true
 end
@@ -423,10 +431,15 @@ function widget:Initialize()
 		hidden = not hidden
 		return true
 	end, nil, "t")
+	widgetHandler:AddAction("buildguide_reset", function()
+		pos, hidden = nil, false
+		return true
+	end, nil, "t")
 end
 
 function widget:Shutdown()
 	writeLog()
 	widgetHandler:RemoveAction("buildguide_reload")
 	widgetHandler:RemoveAction("buildguide_toggle")
+	widgetHandler:RemoveAction("buildguide_reset")
 end

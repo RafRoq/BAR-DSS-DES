@@ -51,7 +51,42 @@ internet, and reads and writes only `goals/*.yaml` and `recipes/*.yaml`.
 - **Recipe editor:** write or load a hand-written build. Add steps from the catalog, reorder them, and set
   builders; invalid builders are flagged. Score it against the goal, or use its end state as the goal.
 
+- **In-game:** take a build into BAR and compare the game with the plan (see below).
+
 The charts use [ECharts](https://echarts.apache.org) 5.5.1 (Apache-2.0), included in `web/vendor/`.
+
+## In-game guide
+
+`widget/gui_build_guide.lua` is a BAR widget that guides you through a planned build while you play. It
+only displays; it never gives orders.
+
+1. **Send a build to BAR.** In the web UI, select a run, open **In-game**, and press **Send to BAR**. This
+   copies the widget to `LuaUI/Widgets/` and the plan to `LuaUI/Config/build_guide_plan.json` in your BAR
+   data folder.
+   - The folder is found at `%LOCALAPPDATA%\Programs\Beyond-All-Reason\data`; set `BAR_DATA_DIR` to use
+     another.
+   - Without the web UI: `optimize.py` writes `build_guide_plan.json` to `results/<name>/`, or use
+     **Download plan** and **Download widget** and copy the files yourself.
+2. **Play.** Enable **Build Order Guide** in the widget list (F11).
+   - The panel shows the last steps finished, everything under construction, and the next steps, with
+     builders and planned times.
+   - It also shows how many seconds ahead or behind plan you are, and your metal and energy next to the
+     plan's.
+   - Drag it by its title. `/luaui buildguide_reload` reloads the plan; `/luaui buildguide_toggle` hides it.
+3. **Compare.** The widget logs every game to `LuaUI/Config/build_guide_log_<date>.json`: when each step
+   really started and finished, plus your resources every 5 s. The **In-game** tab lists these logs.
+   Open one to see:
+   - the delay per step;
+   - plan against game for metal, energy and income;
+   - a step-by-step table.
+
+   This is how to check the model's assumptions, such as walking time and reclaim (see
+   "Where the model differs from the real game").
+
+The widget matches steps by unit type and order: the nth unit of a kind you start is the plan's nth
+step of that kind. A build cancelled before it finishes reopens its step; units not in the plan are
+listed separately. `tests/test_guide.py` runs the widget under Lua 5.1 against a mock of the BAR widget
+API when `lupa` is installed (`pip install lupa`); it hasn't been tested in a real game yet.
 
 ## Command line
 

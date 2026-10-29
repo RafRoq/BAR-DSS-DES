@@ -27,6 +27,8 @@ from bar_opt.data import DATA_FILE, load_units
 from bar_opt.goal import Goal, Weights
 from bar_opt.recipe import parse_steps, replay
 from bar_opt.search import SearchCancelled, SearchConfig, optimize, replay_ops, search_runs
+from bar_opt import guide
+from bar_opt.guide import plan_json
 from bar_opt.serialize import catalog_json, run_json
 from bar_opt.sim import SimError
 
@@ -36,7 +38,8 @@ FOLDERS = {"goals": os.path.join(ROOT, "goals"), "recipes": os.path.join(ROOT, "
 FILE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 _.-]{0,80}\.ya?ml$")
 STATIC = {"/": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"),
           "/style.css": ("style.css", "text/css"),
-          "/vendor/echarts.min.js": ("vendor/echarts.min.js", "text/javascript")}  # ECharts 5.5.1, Apache-2.0
+          "/vendor/echarts.min.js": ("vendor/echarts.min.js", "text/javascript"),  # ECharts 5.5.1, Apache-2.0
+          "/widget/gui_build_guide.lua": ("../widget/gui_build_guide.lua", "text/plain")}
 ALLOWED_HOSTS = {"127.0.0.1", "localhost"}
 DATA_COMMIT = ""
 
@@ -312,6 +315,28 @@ class Handler(BaseHTTPRequestHandler):
             return evaluate_recipe(self._body())
         if method == "POST" and route == ["recipe", "end-state"]:
             return recipe_end_state(self._body())
+        if method == "POST" and route in (["guide", "plan"], ["guide", "install"]):
+            try:
+                plan = plan_json(self._body().get("run"))
+            except (KeyError, TypeError, ValueError) as e:
+                raise BadRequest(f"not a run: {e}")
+            if route[1] == "plan":
+                return plan
+            data_dir = guide.find_bar_data()
+            if data_dir is None:
+                raise BadRequest("BAR data folder not found: set BAR_DATA_DIR")
+            return {"written": guide.install(plan, data_dir), "steps": len(plan["steps"])}
+        if method == "GET" and route == ["guide", "logs"]:
+            data_dir = guide.find_bar_data()
+            return {"data_dir": data_dir, "logs": guide.list_logs(data_dir) if data_dir else []}
+        if method == "GET" and len(route) == 3 and route[:2] == ["guide", "logs"]:
+            data_dir = guide.find_bar_data()
+            if data_dir is None:
+                raise BadRequest("BAR data folder not found: set BAR_DATA_DIR")
+            try:
+                return guide.read_log(data_dir, route[2])
+            except ValueError as e:
+                raise BadRequest(str(e))
         raise FileNotFoundError(path)
 
 

@@ -13,6 +13,7 @@
 !web/*.js
 !web/*.css
 !web/vendor/*
+!widget/*.lua
 __pycache__/
 .pytest_cache/
 .claude/

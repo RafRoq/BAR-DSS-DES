@@ -6,11 +6,13 @@
 
 --from-recipe uses the units a hand-written recipe ends with as the goal and compares
 against that recipe. Results go to results/<name>/: optimized.yaml (interface.py recipe
-format), cookbook.txt (timed schedule with builder ids), graph PNGs and comparison.txt.
+format), cookbook.txt (timed schedule with builder ids), build_guide_plan.json (plan for
+the in-game guide widget, see widget/), graph PNGs and comparison.txt.
 """
 
 import argparse
 import importlib
+import json
 import os
 import time
 
@@ -18,9 +20,11 @@ import yaml
 
 from bar_opt.config import EconConfig
 from bar_opt.goal import Goal
+from bar_opt.guide import PLAN_FILE, plan_json
 from bar_opt.recipe import load_yaml_recipe, replay, save_yaml, to_yaml_steps
 from bar_opt.report import cookbook, plot_run
 from bar_opt.search import SearchConfig, optimize, replay_ops
+from bar_opt.serialize import run_json
 
 ROWS = [
     ("Goal reached at (s)", "finish_time", "{:.1f}"),
@@ -111,6 +115,8 @@ def main():
     save_yaml(to_yaml_steps(best), os.path.join(out, "optimized.yaml"))
     with open(os.path.join(out, "cookbook.txt"), "w", encoding="utf-8") as f:
         f.write(cookbook(best, f"{goal.name}: optimizer"))
+    with open(os.path.join(out, PLAN_FILE), "w", encoding="utf-8") as f:
+        json.dump(plan_json(run_json(best, goal, "optimizer", "optimizer")), f)
 
     if args.compare:
         hand, problems = replay(load_recipe(args.compare), goal.config, max_time=goal.max_time,

@@ -63,8 +63,8 @@ function storageSet(key, value) {
   try { localStorage.setItem(key, value); } catch { /* private mode: ignore */ }
 }
 
-function download(filename, text) {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/yaml" }));
+function download(filename, text, type = "text/yaml") {
+  const url = URL.createObjectURL(new Blob([text], { type }));
   const a = h("a", { href: url, download: filename });
   document.body.append(a);
   a.click();
@@ -104,6 +104,9 @@ const S = {
   tab: "timeline",
   job: null,
   recipe: [],             // [{unit, repeat, builders: []}]
+  gameLog: null,          // in-game guide log loaded in the In-game tab
+  gameLogName: null,      // its file name in the BAR data folder, if loaded from there
+  barData: null,          // BAR data folder found by the server
   nextRunId: 1,
 };
 
@@ -1309,11 +1312,148 @@ async function loadRecipeFile() {
   } catch (e) { toast(e.message, true); }
 }
 
+/* ====================================================================== in-game guide */
+
+function renderIngame() {
+  const run = runById(S.selected);
+  $("#guide-plan").disabled = !run;
+  $("#guide-install").disabled = !run || !S.barData;
+  $("#guide-run").textContent = run
+    ? `Plan from “${run.label}”: ${run.data.jobs.length} steps, goal reached at ${clock(run.data.evaluation.finish_time)} in the model.`
+    : "Select a run above to export its plan.";
+  $("#guide-compare").hidden = !S.gameLog;
+  if (S.gameLog && typeof echarts !== "undefined") renderGuideCompare(S.gameLog);
+}
+
+async function refreshGameLogs() {
+  try {
+    const { data_dir: dir, logs } = await api("/api/guide/logs");
+    S.barData = dir;
+    $("#guide-folder").textContent = dir ? `BAR data folder: ${dir}` : "BAR data folder not found. Set BAR_DATA_DIR before starting app.py, or download the files.";
+    $("#guide-logs").replaceChildren(...(logs.length ? logs : [null]).map((log) => h("li", {}, log
+      ? h("button", { type: "button", "aria-pressed": String(S.gameLogName === log.name), onclick: () => openGameLog(log.name) },
+        h("span", {}, log.name), h("span", { class: "hint" }, new Date(log.modified * 1000).toLocaleString()))
+      : h("span", { class: "hint" }, dir ? "No game logs yet. Play a game with the guide on." : ""))));
+    renderIngame();
+  } catch (e) { toast(e.message, true); }
+}
+
+async function openGameLog(name) {
+  try {
+    S.gameLog = await api(`/api/guide/logs/${encodeURIComponent(name)}`);
+    S.gameLogName = name;
+    $$("#guide-logs button").forEach((b) => b.setAttribute("aria-pressed", String(b.firstChild.textContent === name)));
+    renderIngame();
+  } catch (e) { toast(e.message, true); }
+}
+
+async function installGuidePlan() {
+  const run = runById(S.selected);
+  if (!run) return;
+  try {
+    const res = await api("/api/guide/install", { method: "POST", body: { run: run.data } });
+    toast(`Sent “${run.label}” (${res.steps} steps) to BAR. Enable Build Order Guide in the widget list (F11).`);
+  } catch (e) { toast(e.message, true); }
+}
+
+async function downloadGuidePlan() {
+  const run = runById(S.selected);
+  if (!run) return;
+  try {
+    const plan = await api("/api/guide/plan", { method: "POST", body: { run: run.data } });
+    download("build_guide_plan.json", JSON.stringify(plan), "application/json");
+    toast("Saved build_guide_plan.json. Put it in LuaUI/Config/ in your BAR data folder.");
+  } catch (e) { toast(e.message, true); }
+}
+
+function loadGameLog(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const log = JSON.parse(reader.result);
+      if (log.format !== "bar-build-guide-log" || !Array.isArray(log.steps)) throw new Error("not a build guide log");
+      S.gameLog = log;
+      S.gameLogName = null;
+      renderIngame();
+      toast(`Loaded ${file.name}`);
+    } catch (e) { toast(`${file.name}: ${e.message}`, true); }
+  };
+  reader.readAsText(file);
+}
+
+const isTime = (v) => v !== null && v !== undefined;
+const delta = (a, b) => (isTime(a) && isTime(b) ? a - b : null);
+const fmtDelta = (d) => (d === null ? "—" : `${d > 0 ? "+" : ""}${fmt(d, 1)} s`);
+const deltaClass = (d) => (d === null ? "" : d >= 2 ? "late" : d <= -2 ? "early" : "");
+
+function renderGuideCompare(log) {
+  const steps = log.steps;
+  const started = steps.filter((s) => isTime(s.actual_start));
+  const finished = steps.filter((s) => isTime(s.actual_finish));
+  const planEnd = Math.max(0, ...steps.map((s) => s.planned_finish || 0));
+  const gameEnd = finished.length === steps.length ? Math.max(0, ...finished.map((s) => s.actual_finish)) : null;
+  const delays = started.map((s) => s.actual_start - s.planned_start);
+  const worst = started.reduce((w, s) => (!w || s.actual_start - s.planned_start > w.actual_start - w.planned_start ? s : w), null);
+  const extra = Array.isArray(log.extra) ? log.extra : [];
+
+  $("#guide-title").replaceChildren(`${log.plan_name || "Build guide"}`,
+    h("span", { class: "hint" }, [log.map, log.recorded].filter(Boolean).join(" · ")));
+  const tile = (label, value, sub) => h("div", { class: "tile" }, h("div", { class: "tile-label" }, label),
+    h("div", { class: "tile-value" }, value), sub ? h("div", { class: "tile-sub" }, sub) : null);
+  $("#guide-tiles").replaceChildren(
+    tile("Build done", gameEnd === null ? "not finished" : clock(gameEnd),
+      gameEnd === null ? `${finished.length} of ${steps.length} steps finished` : `plan ${clock(planEnd)} · ${fmtDelta(gameEnd - planEnd)}`),
+    tile("Steps started", `${started.length} / ${steps.length}`,
+      extra.length ? `${extra.length} ${extra.length === 1 ? "unit" : "units"} built that ${extra.length === 1 ? "is" : "are"} not in the plan`
+        : "no units outside the plan"),
+    tile("Average start delay", delays.length ? fmtDelta(delays.reduce((a, b) => a + b, 0) / delays.length) : "—",
+      "game start − planned start"),
+    tile("Biggest delay", worst ? fmtDelta(worst.actual_start - worst.planned_start) : "—",
+      worst ? `step ${worst.n}: ${worst.display}` : ""),
+  );
+
+  const c1 = tok("--series-1"), c2 = tok("--series-2");
+  const column = (rows, k) => (rows || []).map((r) => [r[0], r[k]]);
+  const maxT = Math.ceil(Math.max(planEnd, ...(log.resources || []).map((r) => r[0]), 1));
+  for (const [id, k] of Object.entries({ "guide-metal": 1, "guide-energy": 2, "guide-mincome": 3 })) {
+    const option = baseOption(maxT);
+    option.series = [lineSeries("Plan", column(log.plan_resources, k), c1), lineSeries("Game", column(log.resources, k), c2)];
+    option.tooltip.formatter = (p) => tooltipRows(p);
+    const chart = chartFor(id);
+    chart.setOption(option, true);
+    chart.group = "guide";
+    legend(`lg-${id}`, [{ label: "Plan", color: c1, kind: "line" }, { label: "Game", color: c2, kind: "line" }]);
+  }
+  const option = baseOption(maxT);
+  option.series = [lineSeries("Delay", started.map((s) => [s.planned_start, s.actual_start - s.planned_start]), c2,
+    { showSymbol: true, symbolSize: 5 })];
+  option.tooltip = { ...option.tooltip, trigger: "item", formatter: (p) => {
+    const s = started[p.dataIndex];
+    return `Step ${s.n}: <strong>${s.display}</strong><br>planned ${clock(s.planned_start)}, game ${clock(s.actual_start)} (${fmtDelta(p.value[1])})`;
+  } };
+  const chart = chartFor("guide-delay");
+  chart.setOption(option, true);
+  chart.group = "guide";
+  echarts.connect("guide");
+
+  const head = h("tr", {}, ...["#", "Unit", "Builder", "Plan start", "Game start", "Δ start", "Plan done", "Game done", "Δ done"]
+    .map((t, i) => h("th", { class: i === 1 || i === 2 ? "text" : "" }, t)));
+  const rows = steps.map((s) => {
+    const ds = delta(s.actual_start, s.planned_start), df = delta(s.actual_finish, s.planned_finish);
+    return h("tr", {}, h("td", {}, s.n), h("td", { class: "text" }, s.display), h("td", { class: "text" }, s.builder),
+      h("td", {}, clock(s.planned_start)), h("td", {}, clock(s.actual_start ?? null)), h("td", { class: deltaClass(ds) }, fmtDelta(ds)),
+      h("td", {}, clock(s.planned_finish)), h("td", {}, clock(s.actual_finish ?? null)), h("td", { class: deltaClass(df) }, fmtDelta(df)));
+  });
+  $("#guide-table").replaceChildren(h("thead", {}, head), h("tbody", {}, ...rows));
+}
+
 /* ====================================================================== tabs, theme, init */
+
+const TABS = ["timeline", "builders", "compare", "recipe", "ingame"];
 
 function setTab(tab) {
   S.tab = tab;
-  for (const name of ["timeline", "builders", "compare", "recipe"]) {
+  for (const name of TABS) {
     $(`#tab-${name}`).hidden = name !== tab;
     $(`#tabbtn-${name}`).setAttribute("aria-selected", String(name === tab));
   }
@@ -1329,12 +1469,14 @@ function renderTab() {
   if (typeof echarts === "undefined") {
     if (S.tab !== "recipe" && run) toast("The chart library (web/vendor/echarts.min.js) did not load.", true);
     if (S.tab === "recipe") renderRecipe();
+    if (S.tab === "ingame") renderIngame();
     return;
   }
   if (S.tab === "timeline" && run) renderTimeline(run);
   else if (S.tab === "builders" && run) renderBuilders(run);
   else if (S.tab === "compare") renderCompare();
   else if (S.tab === "recipe") renderRecipe();
+  else if (S.tab === "ingame") renderIngame();
 }
 
 function applyTheme(theme) {
@@ -1348,11 +1490,11 @@ function applyTheme(theme) {
 }
 
 function wire() {
-  for (const name of ["timeline", "builders", "compare", "recipe"]) {
+  for (const name of TABS) {
     $(`#tabbtn-${name}`).addEventListener("click", () => setTab(name));
   }
   $(".tabs").addEventListener("keydown", (e) => {
-    const order = ["timeline", "builders", "compare", "recipe"];
+    const order = TABS;
     const i = order.indexOf(S.tab);
     if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
       const next = order[(i + (e.key === "ArrowRight" ? 1 : order.length - 1)) % order.length];
@@ -1384,6 +1526,16 @@ function wire() {
     S.stepsFilter = e.target.value;
     const run = runById(S.selected);
     if (run) renderSteps(run);
+  });
+  $("#guide-plan").addEventListener("click", downloadGuidePlan);
+  $("#guide-install").addEventListener("click", installGuidePlan);
+  $("#guide-logs-refresh").addEventListener("click", refreshGameLogs);
+  $("#tabbtn-ingame").addEventListener("click", refreshGameLogs);
+  $("#guide-log-load").addEventListener("click", () => $("#guide-log-file").click());
+  $("#guide-log-file").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) loadGameLog(file);
+    e.target.value = "";
   });
   $("#export-yaml").addEventListener("click", () => {
     const run = runById(S.selected);

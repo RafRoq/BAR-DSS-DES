@@ -92,6 +92,7 @@
         <button type="button" role="tab" id="tabbtn-builders" aria-controls="tab-builders" aria-selected="false">Builders &amp; steps</button>
         <button type="button" role="tab" id="tabbtn-compare" aria-controls="tab-compare" aria-selected="false">Compare</button>
         <button type="button" role="tab" id="tabbtn-recipe" aria-controls="tab-recipe" aria-selected="false">Recipe editor</button>
+        <button type="button" role="tab" id="tabbtn-ingame" aria-controls="tab-ingame" aria-selected="false">In-game</button>
       </nav>
 
       <section class="tab" id="tab-timeline" role="tabpanel" aria-labelledby="tabbtn-timeline">
@@ -186,6 +187,49 @@
           <ul class="combo-list" id="step-results" role="listbox" hidden></ul>
         </div>
         <div id="recipe-messages" class="messages" aria-live="polite"></div>
+      </section>
+      <section class="tab" id="tab-ingame" role="tabpanel" aria-labelledby="tabbtn-ingame" hidden>
+        <div class="ingame-grid">
+          <section class="ingame-card">
+            <h3>1. Take a build into the game</h3>
+            <p id="guide-run" class="hint">Select a run to export its plan.</p>
+            <div class="steps-actions">
+              <button type="button" class="primary" id="guide-install" disabled>Send to BAR</button>
+              <button type="button" id="guide-plan" disabled>Download plan</button>
+              <a class="button" href="/widget/gui_build_guide.lua" download="gui_build_guide.lua">Download widget</a>
+            </div>
+            <p class="hint" id="guide-folder"></p>
+            <ol class="ingame-howto">
+              <li><strong>Send to BAR</strong> copies the widget to <code>LuaUI/Widgets/</code> and the plan to <code>LuaUI/Config/build_guide_plan.json</code> in your BAR data folder. Sending another run replaces the plan.</li>
+              <li>In game, enable <strong>Build Order Guide</strong> in the widget list (F11). Drag the panel by its title.</li>
+              <li>If you send a new plan while BAR is running, type <code>/luaui buildguide_reload</code>.</li>
+            </ol>
+            <p class="hint">The panel shows the next steps, who builds them, the planned times and how far ahead or behind you are. It only displays; it never gives orders.</p>
+          </section>
+          <section class="ingame-card">
+            <h3>2. Compare plan and game</h3>
+            <p class="hint">The widget writes <code>LuaUI/Config/build_guide_log_&lt;date&gt;.json</code> during each game.</p>
+            <ul class="guide-logs" id="guide-logs"></ul>
+            <div class="steps-actions">
+              <button type="button" id="guide-logs-refresh">Refresh</button>
+              <button type="button" id="guide-log-load">Load from file…</button>
+              <input type="file" id="guide-log-file" accept=".json,application/json" hidden>
+            </div>
+          </section>
+        </div>
+        <div id="guide-compare" hidden>
+          <div class="run-title" id="guide-title"></div>
+          <div class="tiles" id="guide-tiles"></div>
+          <div class="chart-pair">
+            <figure class="chart-card"><figcaption><h3>Delay per step <span class="hint">game start − planned start, s</span></h3></figcaption><div class="chart" id="guide-delay"></div></figure>
+            <figure class="chart-card"><figcaption><h3>Metal stored</h3><div class="legend" id="lg-guide-metal"></div></figcaption><div class="chart" id="guide-metal"></div></figure>
+          </div>
+          <div class="chart-pair">
+            <figure class="chart-card"><figcaption><h3>Metal income <span class="hint">per second</span></h3><div class="legend" id="lg-guide-mincome"></div></figcaption><div class="chart" id="guide-mincome"></div></figure>
+            <figure class="chart-card"><figcaption><h3>Energy stored</h3><div class="legend" id="lg-guide-energy"></div></figcaption><div class="chart" id="guide-energy"></div></figure>
+          </div>
+          <div class="table-scroll"><table class="metrics" id="guide-table"></table></div>
+        </div>
       </section>
     </main>
   </div>

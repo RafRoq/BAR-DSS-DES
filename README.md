@@ -318,8 +318,28 @@ class, reload, burst, range, splash, scatter, speed and target categories) is ex
 `bar_units.json`. It reads the Lua tables as text, applies BAR's own category rules from
 `gamedata/alldefs_post.lua`, and takes armour classes from `gamedata/armordefs.lua`.
 
+Sweep-fire heat rays count for the share of time they fire. Torpedoes and depth charges are ignored, since
+every fight is on land.
+
 **Not modelled:** micro and kiting, terrain, target priorities, formations reshaping, friendly fire,
 shields, cloak, air and veterancy. Use the ranking as a first filter and try the top picks in game.
+
+## Army against tech
+
+Three analyses for the question "how much army can I afford while I tech?":
+
+- `python analyze_tech.py [--faction cor] [--budget 3000]`: what T1 is worth once the enemy has T2. It finds
+  your most robust T1 and T2 armies, fights each against every T2 army (single types and 50/50 pairs) that
+  each enemy faction can field, and measures how much more metal you need to beat the strongest. It also
+  scores each of your units against enemy T1 and T2. Writes `results/units/tech_<faction>_<budget>.md`.
+- `python analyze_payback.py [--commander corcom] [--wind 14.2]`: how many seconds each economy building
+  must run to earn back its cost, with energy at the 70:1 converter rate, and the income that 1000 metal
+  of army would have bought instead. Writes `results/economy/payback_<faction>.md`.
+- `python analyze_army_cost.py [--target coravp] [--mix corlevlr:0.75,corwolv:0.25]`: when the tech
+  target arrives with an army of each size (`--sizes`) standing by each deadline (`--deadlines`). Each
+  case is a full optimizer run, run in parallel, and the result is the delay per 100 metal of army.
+  Units are never lost in the simulator, so rebuilding losses costs like a bigger army. Writes
+  `results/economy/army_cost_<target>.md`.
 
 ## Data
 

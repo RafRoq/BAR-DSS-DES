@@ -91,6 +91,18 @@ def test_t2_armies_leave_out_crawling_bombs_and_decoys(units):
                                                  if dps(units[n], units["corak"]) > 0]
 
 
+def test_armies_follow_the_budget_and_the_shares(units):
+    grunts = army(units, {"corak": 1}, 1000)
+    assert len(grunts) == round(1000 / units["corak"].cost)
+    assert len(army(units, {"corsumo": 1}, 500)) == 1  # always at least one unit
+    mixed = army(units, {"correap": 0.5, "cormart": 0.3, "corpyro": 0.2}, 6000)
+    spent = {n: sum(u.cost for u in mixed if u.name == n) for n in ("correap", "cormart", "corpyro")}
+    assert abs(sum(spent.values()) - 6000) <= units["correap"].cost / 2
+    assert spent["correap"] > spent["cormart"] > spent["corpyro"] > 0
+    # a small share of a small budget gets no unit instead of a whole expensive one
+    assert {u.name for u in army(units, {"corak": 0.95, "corsumo": 0.05}, 1000)} == {"corak"}
+
+
 def test_even_armies_cost_about_the_same(units):
     a, b = even_armies(units, {"corak": 1.0}, {"corsumo": 1.0}, 3000)
     cost_a, cost_b = sum(u.cost for u in a), sum(u.cost for u in b)

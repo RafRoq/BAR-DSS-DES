@@ -194,13 +194,21 @@ class FightResult:
 
 
 def army(units: dict[str, CombatUnit], mix: dict[str, float], budget: float) -> list[CombatUnit]:
-    """Units bought with `budget`, split by cost share between the types in `mix`."""
+    """Units bought with `budget`, split by cost share between the types in `mix`: one unit at a
+    time, of the type furthest below its share among those that fit (overshooting the budget by
+    at most half their cost). A type with a small share of a small budget may get no unit; the
+    army always has at least one."""
     total = sum(mix.values())
+    target = {name: budget * share / total for name, share in mix.items()}
+    spent = dict.fromkeys(mix, 0.0)
     out = []
-    for name, share in mix.items():
-        u = units[name]
-        out += [u] * max(1, round(budget * share / total / u.cost))
-    return out
+    while True:
+        fits = [n for n in mix if sum(spent.values()) + units[n].cost / 2 <= budget] or ([] if out else list(mix))
+        if not fits:
+            return out
+        name = max(fits, key=lambda n: target[n] - spent[n])
+        out.append(units[name])
+        spent[name] += units[name].cost
 
 
 def even_armies(units: dict[str, CombatUnit], mix_a: dict[str, float], mix_b: dict[str, float],

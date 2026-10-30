@@ -29,6 +29,15 @@ def test_upgrades_count_what_they_add_and_converters_never_pay_back(cortex):
     assert cortex["corfus"].needs == "" and cortex["corfus"].builder.startswith("Advanced Construction")
 
 
+def test_army_sizes_become_whole_units():
+    from analyze_army_cost import army_counts, unit_cost
+    counts = army_counts({"corlevlr": 0.75, "corwolv": 0.25}, 1500)
+    assert set(counts) == {"corlevlr", "corwolv"}
+    spent = sum(unit_cost(u) * n for u, n in counts.items())
+    assert abs(spent - 1500) <= max(unit_cost("corlevlr"), unit_cost("corwolv"))
+    assert army_counts({"corlevlr": 1}, 0) == {}
+
+
 def test_only_land_economy_buildings_are_listed(cortex):
     assert "coruwfus" not in cortex  # only ships build it
     assert "corkorg" not in cortex  # a T3 unit that happens to make energy

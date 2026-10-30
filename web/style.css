@@ -21,6 +21,9 @@
   --serious: #ec835a;
   --critical: #d03b3b;
   --on-accent: #ffffff;
+  --diverge-neg: #e34948;   /* diverging scale: enemy wins ... even ... you win */
+  --diverge-mid: #f0efec;
+  --diverge-pos: #2a78d6;
   --font: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -43,6 +46,9 @@
     --series-4: #c98500;
     --idle: #4a4a46;
     --good-text: #0ca30c;
+    --diverge-neg: #e66767;
+    --diverge-mid: #383835;
+    --diverge-pos: #3987e5;
   }
 }
 
@@ -64,6 +70,9 @@
   --series-4: #c98500;
   --idle: #4a4a46;
   --good-text: #0ca30c;
+  --diverge-neg: #e66767;
+  --diverge-mid: #383835;
+  --diverge-pos: #3987e5;
 }
 
 * { box-sizing: border-box; }
@@ -447,6 +456,15 @@ table.metrics th .swatch { margin-right: 6px; }
 .ingame-howto { padding-left: 20px; margin: 10px 0 6px; line-height: 1.5; }
 .ingame-card code { font-size: 12px; background: var(--wash); padding: 0 4px; border-radius: 4px; }
 #guide-compare .chart-pair { margin-bottom: 10px; }
+
+/* ---------------------------------------------------------------- units */
+
+.units-toolbar { margin-bottom: 12px; }
+.units-toolbar label { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 13px; }
+#units-view > .chart-card, #units-view > .chart-pair { margin-bottom: 10px; }
+.scale-bar { display: inline-block; width: 120px; height: 10px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--diverge-neg), var(--diverge-mid), var(--diverge-pos)); }
+#units-table th.text, #units-table td.text { text-align: left; }
 .guide-logs { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 4px; }
 .guide-logs button { width: 100%; text-align: left; display: flex; justify-content: space-between; gap: 12px; }
 .guide-logs button[aria-pressed="true"] { border-color: var(--series-1); }

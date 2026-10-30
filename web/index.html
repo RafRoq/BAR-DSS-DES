@@ -96,6 +96,7 @@
         <button type="button" role="tab" id="tabbtn-compare" aria-controls="tab-compare" aria-selected="false">Compare</button>
         <button type="button" role="tab" id="tabbtn-recipe" aria-controls="tab-recipe" aria-selected="false">Recipe editor</button>
         <button type="button" role="tab" id="tabbtn-ingame" aria-controls="tab-ingame" aria-selected="false">In-game</button>
+        <button type="button" role="tab" id="tabbtn-units" aria-controls="tab-units" aria-selected="false">Units</button>
       </nav>
 
       <section class="tab" id="tab-timeline" role="tabpanel" aria-labelledby="tabbtn-timeline">
@@ -235,6 +236,60 @@
           </div>
           <p class="hint">“Wait before” is how much later a step started than planned, compared with the step before: time spent walking or giving orders. Build times show whether the economy plan held: when they match, the economy did what the plan said and the remaining gap is execution.</p>
           <div class="table-scroll"><table class="metrics" id="guide-table"></table></div>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-units" role="tabpanel" aria-labelledby="tabbtn-units" hidden>
+        <div class="recipe-toolbar units-toolbar">
+          <label>Report <select id="units-report"></select></label>
+          <label>Situation <select id="units-situation">
+            <option value="scores">Both (mean)</option>
+            <option value="blob">Tight block</option>
+            <option value="spread">Spread out</option>
+          </select></label>
+          <label>Rank by <select id="units-rank">
+            <option value="counter">vs best counter</option>
+            <option value="average">Average</option>
+            <option value="worst">Worst case</option>
+          </select></label>
+          <label>Show <select id="units-top">
+            <option value="10">top 10</option>
+            <option value="15" selected>top 15</option>
+            <option value="25">top 25</option>
+            <option value="all">all</option>
+          </select></label>
+          <span class="spacer"></span>
+          <button type="button" id="units-refresh">Refresh</button>
+        </div>
+        <div class="placeholder" id="units-empty" hidden>No unit reports yet. Run <code>python analyze_units.py</code> (add <code>--faction arm</code> or <code>--budget 3000</code> for others) and press Refresh.</div>
+        <div id="units-view" hidden>
+          <div class="run-title" id="units-title"></div>
+          <div class="tiles" id="units-tiles"></div>
+          <figure class="chart-card">
+            <figcaption><h3>Best compositions <span class="hint" id="units-rank-hint"></span></h3></figcaption>
+            <div class="chart" id="un-rank"></div>
+          </figure>
+          <figure class="chart-card">
+            <figcaption><h3>Matchups <span class="hint">each composition against each enemy unit, same cost</span></h3><div class="legend" id="lg-un-score"></div></figcaption>
+            <div class="chart" id="un-matchups"></div>
+          </figure>
+          <div class="chart-pair">
+            <figure class="chart-card"><figcaption><h3>Most robust mix <span class="hint">your best mix when the enemy knows it</span></h3></figcaption><div class="chart" id="un-robust"></div></figure>
+            <figure class="chart-card"><figcaption><h3>Enemy's best counter <span class="hint">the enemy mix that hurts all your options most</span></h3><div class="legend" id="lg-un-counter"></div></figcaption><div class="chart" id="un-counter"></div></figure>
+          </div>
+          <figure class="chart-card">
+            <figcaption><h3>Static defences <span class="hint">same cost of one defence type holding against each attacker; mean of both situations</span></h3></figcaption>
+            <div class="chart" id="un-defences"></div>
+          </figure>
+          <figure class="chart-card">
+            <figcaption><h3>Cost efficiency <span class="hint" id="units-eff-hint"></span></h3><div class="legend" id="lg-un-eff"></div></figcaption>
+            <div class="chart chart-tall" id="un-efficiency"></div>
+          </figure>
+          <p class="hint">Score per fight: share of value left alive minus the enemy's, from −1 (wiped out, enemy untouched) to +1. “vs best counter” weights each matchup by the enemy's best counter mix. Fights model unit stats, ranges, projectile speed, scatter and splash; not micro, terrain or air. Treat the ranking as a shortlist to try in game.</p>
+          <details class="table-view">
+            <summary>Data table</summary>
+            <div class="table-scroll"><table class="metrics" id="units-table"></table></div>
+          </details>
         </div>
       </section>
     </main>

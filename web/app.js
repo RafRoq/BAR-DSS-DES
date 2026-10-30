@@ -103,6 +103,8 @@ const S = {
   selectedJob: null,
   stepsFilter: "",
   tab: "timeline",
+  unitReport: null,       // the loaded results/units report (see analyze_units.py)
+  unitReportsLoaded: false,
   job: null,
   recipe: [],             // [{unit, repeat, builders: []}]
   gameLog: null,          // in-game guide log loaded in the In-game tab
@@ -1557,9 +1559,282 @@ function renderGuideCompare(log) {
   $("#guide-table").replaceChildren(h("thead", {}, head), h("tbody", {}, ...rows));
 }
 
+/* ====================================================================== units */
+
+const FACTION_NAMES = { arm: "Armada", cor: "Cortex", leg: "Legion" };
+const FACTION_SERIES = { arm: "--series-1", cor: "--series-2", leg: "--series-3" };  // fixed per faction
+const RANK_LABELS = { counter: "vs best counter", average: "average", worst: "worst case" };
+const SITUATION_LABELS = { scores: "Both (mean)", blob: "Tight block", spread: "Spread out" };
+
+const signed = (v) => (v >= 0 ? "+" : "−") + fmt(Math.abs(v), 2);
+const pct = (w) => `${fmt(w * 100)}%`;
+const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+function reportLabel(file) {
+  const [faction, budget] = file.replace(/\.json$/, "").split("_");
+  return `${FACTION_NAMES[faction] || faction}, ${budget} metal`;
+}
+
+async function refreshUnitReports() {
+  S.unitReportsLoaded = true;
+  let reports = [];
+  try { reports = (await api("/api/units")).reports; } catch (e) { toast(e.message, true); }
+  const select = $("#units-report");
+  const keep = select.value || storageGet("bar-opt-units-report");
+  select.replaceChildren(...reports.map((r) => h("option", { value: r }, reportLabel(r))));
+  $("#units-empty").hidden = reports.length > 0;
+  if (!reports.length) {
+    S.unitReport = null;
+    $("#units-view").hidden = true;
+    return;
+  }
+  select.value = reports.includes(keep) ? keep : reports[0];
+  await loadUnitReport(select.value);
+}
+
+async function loadUnitReport(file) {
+  try { S.unitReport = await api(`/api/units/${encodeURIComponent(file)}`); } catch (e) { toast(e.message, true); return; }
+  storageSet("bar-opt-units-report", file);
+  if (S.tab === "units") renderUnits();
+}
+
+function unitName(report, name, withFaction = false) {
+  const u = report.units[name];
+  if (!u) return name;
+  return withFaction ? `${u.display} (${FACTION_NAMES[u.faction] || u.faction})` : u.display;
+}
+
+const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+/** Compositions with their scores in the chosen situation, ranked. "vs best counter" weights
+ *  each matchup by the enemy counter mix solved for the mean of both situations. */
+function compositionRows(report) {
+  const key = $("#units-situation").value;
+  const counter = report.enemies.map((e) => report.enemy_counter_mix[e] || 0);
+  const rows = report.compositions.map((c) => {
+    const s = c[key];
+    let worst = 0;
+    s.forEach((v, j) => { if (v < s[worst]) worst = j; });
+    return { c, scores: s, counter: s.reduce((sum, v, j) => sum + v * counter[j], 0), average: mean(s),
+      blob: mean(c.blob), spread: mean(c.spread), worst: s[worst], worstAgainst: report.enemies[worst] };
+  });
+  const by = $("#units-rank").value;
+  return rows.sort((a, b) => b[by] - a[by]);
+}
+
+/** Enemy columns grouped by faction, hardest first within each faction. */
+function enemyColumns(report, key) {
+  const order = Object.keys(FACTION_NAMES);
+  return report.enemies.map((e, j) => ({ e, j, faction: report.units[e]?.faction,
+    hardness: mean(report.compositions.map((c) => c[key][j])) }))
+    .sort((a, b) => order.indexOf(a.faction) - order.indexOf(b.faction) || a.hardness - b.hardness)
+    .map((col) => ({ ...col, label: `${unitName(report, col.e)} · ${(FACTION_NAMES[col.faction] || "").slice(0, 3)}` }));
+}
+
+function renderUnits() {
+  const report = S.unitReport;
+  $("#units-view").hidden = !report;
+  if (!report) {
+    if (!S.unitReportsLoaded) refreshUnitReports();
+    return;
+  }
+  const by = $("#units-rank").value;
+  const key = $("#units-situation").value;
+  const rows = compositionRows(report);
+  const shown = $("#units-top").value === "all" ? rows : rows.slice(0, Number($("#units-top").value));
+  const vs = [...new Set(report.enemies.map((e) => FACTION_NAMES[report.units[e]?.faction]).filter(Boolean))];
+  $("#units-title").replaceChildren(`${FACTION_NAMES[report.faction]} early ground units, ${fmt(report.budget)} metal per side`,
+    h("span", { class: "hint" }, `${report.compositions.length} compositions × ${report.enemies.length} enemy units ` +
+      `(${vs.join(", ")}) · unit stats against a ${report.reference}`));
+  $("#units-rank-hint").textContent = `${RANK_LABELS[by]} score, ${SITUATION_LABELS[key].toLowerCase()}`;
+  $("#units-eff-hint").textContent = `against a ${report.reference}; up and to the right wins straight fights`;
+  $("#lg-un-score").replaceChildren(h("span", { class: "item" }, "−1 enemy wins", h("span", { class: "scale-bar" }), "+1 you win"));
+  renderUnitTiles(report, rows);
+  renderUnitTable(report, rows);
+  if (typeof echarts === "undefined") return;
+  const cols = enemyColumns(report, key);
+  renderRankChart(report, shown);
+  scoreHeatmap("un-matchups", shown.map((r) => r.c.label), cols, (i, col) => shown[i].scores[col.j], (i, col) => {
+    const r = shown[i];
+    return tipTable(`${r.c.label} vs ${unitName(report, col.e, true)}`, [
+      [SITUATION_LABELS[key], signed(r.scores[col.j])],
+      ...(key === "scores" ? [["Tight block", signed(r.c.blob[col.j])], ["Spread out", signed(r.c.spread[col.j])]] : []),
+      ["In the enemy's best counter", pct(report.enemy_counter_mix[col.e] || 0)]]);
+  });
+  renderMixCharts(report);
+  const defences = Object.keys(report.defences).sort((a, b) => mean(report.defences[b]) - mean(report.defences[a]));
+  scoreHeatmap("un-defences", defences.map((d) => unitName(report, d)), enemyColumns(report, "scores"),
+    (i, col) => report.defences[defences[i]][col.j],
+    (i, col) => tipTable(`${unitName(report, defences[i])} vs ${unitName(report, col.e, true)}`, [
+      ["Score", signed(report.defences[defences[i]][col.j])],
+      ["Defence cost", `${fmt(report.units[defences[i]]?.cost)} metal`]]));
+  renderEfficiency(report);
+}
+
+function renderUnitTiles(report, rows) {
+  const tile = (label, value, sub) => h("div", { class: "tile" }, h("div", { class: "tile-label" }, label),
+    h("div", { class: "tile-value" }, value), sub ? h("div", { class: "tile-sub" }, sub) : null);
+  const by = $("#units-rank").value;
+  const best = rows[0];
+  const robust = report.compositions.filter((c) => c.robust_weight > 0.01).sort((a, b) => b.robust_weight - a.robust_weight);
+  const counters = Object.entries(report.enemy_counter_mix).filter(([, w]) => w > 0.01).sort((a, b) => b[1] - a[1]);
+  $("#units-tiles").replaceChildren(
+    tile(`Best, ${RANK_LABELS[by]}`, best.c.label,
+      `${signed(best[by])} · worst against ${unitName(report, best.worstAgainst)} (${signed(best.worst)})`),
+    tile("Most robust mix", robust.length ? robust[0].label : "—", robust.map((c) => `${c.label} ${pct(c.robust_weight)}`).join(" · ")),
+    tile("Game value", signed(report.game_value), report.game_value >= 0
+      ? "the robust mix comes out ahead whatever the enemy builds" : "the enemy's best counter comes out ahead"),
+    tile("Enemy's best counter", counters.length ? unitName(report, counters[0][0]) : "—",
+      counters.map(([n, w]) => `${unitName(report, n, true)} ${pct(w)}`).join(" · ")));
+}
+
+function tipTable(title, rows) {
+  return `<div style="margin-bottom:4px;font-weight:600">${esc(title)}</div>` + rows.map(([k, v]) =>
+    `<div style="display:flex;justify-content:space-between;gap:16px"><span style="color:${tok("--text-secondary")}">${esc(k)}</span>` +
+    `<strong>${esc(v)}</strong></div>`).join("");
+}
+
+function itemTooltip(formatter) {
+  return { trigger: "item", confine: true, formatter, backgroundColor: tok("--surface-raised"), borderColor: tok("--border"),
+    textStyle: { color: tok("--text-primary"), fontSize: 12 } };
+}
+
+/** A chart whose height follows its row count. */
+function sizedChart(id, height) {
+  document.getElementById(id).style.height = `${height}px`;
+  const c = chartFor(id);
+  c.resize();
+  return c;
+}
+
+function hbarOption(labels, data, { min, max, percent = false, labels: showLabels = false, tooltip }) {
+  const axis = axisStyle();
+  return {
+    animation: false,
+    textStyle: { fontFamily: tok("--font") },
+    grid: { left: 8, right: showLabels ? 44 : 16, top: 6, bottom: 4, containLabel: true },
+    tooltip: itemTooltip(tooltip),
+    xAxis: { type: "value", min, max, ...axis,
+      axisLabel: { ...axis.axisLabel, formatter: percent ? (v) => `${Math.round(v * 100)}%` : (v) => (v > 0 ? `+${v}` : `${v}`) } },
+    yAxis: { type: "category", inverse: true, data: labels, ...axis, splitLine: { show: false },
+      axisLabel: { ...axis.axisLabel, color: tok("--text-secondary") } },
+    series: [{
+      type: "bar", barMaxWidth: 14,
+      data: data.map(({ value, color }) => ({ value,
+        itemStyle: { color, borderRadius: value >= 0 ? [0, 4, 4, 0] : [4, 0, 0, 4] } })),
+      label: { show: showLabels, position: "right", color: tok("--text-secondary"), fontSize: 11,
+        formatter: (p) => (percent ? pct(p.value) : signed(p.value)) },
+    }],
+  };
+}
+
+function renderRankChart(report, shown) {
+  const by = $("#units-rank").value;
+  const color = tok(FACTION_SERIES[report.faction] || "--series-1");
+  const values = shown.map((r) => r[by]);
+  sizedChart("un-rank", shown.length * 24 + 34).setOption(hbarOption(
+    shown.map((r) => r.c.label), shown.map((r, i) => ({ value: values[i], color })), {
+      min: Math.min(0, Math.floor(Math.min(...values) * 10) / 10),
+      max: Math.max(0, Math.ceil(Math.max(...values) * 10) / 10),
+      tooltip: (p) => {
+        const r = shown[p.dataIndex];
+        return tipTable(r.c.label, [["vs best counter", signed(r.counter)], ["Average", signed(r.average)],
+          ["Tight block (average)", signed(r.blob)], ["Spread out (average)", signed(r.spread)],
+          ["Worst case", `${signed(r.worst)} vs ${unitName(report, r.worstAgainst, true)}`],
+          ["In the robust mix", pct(r.c.robust_weight)]]);
+      },
+    }), true);
+}
+
+function factionLegend(id, factions) {
+  legend(id, factions.map((f) => ({ label: FACTION_NAMES[f] || f, color: tok(FACTION_SERIES[f] || "--idle") })));
+}
+
+function renderMixCharts(report) {
+  const robust = report.compositions.filter((c) => c.robust_weight > 0.01).sort((a, b) => b.robust_weight - a.robust_weight);
+  const counters = Object.entries(report.enemy_counter_mix).filter(([, w]) => w > 0.01).sort((a, b) => b[1] - a[1]);
+  const top = Math.max(...robust.map((c) => c.robust_weight), ...counters.map(([, w]) => w), 0.1);
+  const max = Math.min(1, Math.ceil(top * 10) / 10);  // the same scale on both charts
+  const height = Math.max(robust.length, counters.length) * 26 + 34;
+  const mine = tok(FACTION_SERIES[report.faction] || "--series-1");
+  sizedChart("un-robust", height).setOption(hbarOption(robust.map((c) => c.label),
+    robust.map((c) => ({ value: c.robust_weight, color: mine })), { min: 0, max, percent: true, labels: true,
+      tooltip: (p) => tipTable(robust[p.dataIndex].label, [["Share of the army value", pct(p.value)],
+        ["vs best counter", signed(robust[p.dataIndex].vs_best_counter)]]) }), true);
+  sizedChart("un-counter", height).setOption(hbarOption(counters.map(([n]) => unitName(report, n)),
+    counters.map(([n, w]) => ({ value: w, color: tok(FACTION_SERIES[report.units[n]?.faction] || "--idle") })),
+    { min: 0, max, percent: true, labels: true,
+      tooltip: (p) => tipTable(unitName(report, counters[p.dataIndex][0], true), [["Share of the enemy's army value", pct(p.value)]]) }), true);
+  factionLegend("lg-un-counter", [...new Set(counters.map(([n]) => report.units[n]?.faction).filter(Boolean))]);
+}
+
+/** Rows x enemy columns of scores from -1 to +1 on the diverging scale. */
+function scoreHeatmap(id, rowLabels, cols, cell, tooltip) {
+  const axis = axisStyle();
+  const data = [];
+  rowLabels.forEach((_, i) => cols.forEach((col, k) => data.push([k, i, cell(i, col)])));
+  sizedChart(id, rowLabels.length * 22 + 120).setOption({
+    animation: false,
+    textStyle: { fontFamily: tok("--font") },
+    grid: { left: 8, right: 12, top: 6, bottom: 4, containLabel: true },
+    tooltip: itemTooltip((p) => tooltip(p.value[1], cols[p.value[0]])),
+    xAxis: { type: "category", data: cols.map((c) => c.label), ...axis, axisLine: { show: false }, splitLine: { show: false },
+      axisLabel: { ...axis.axisLabel, color: tok("--text-secondary"), rotate: 50, interval: 0 } },
+    yAxis: { type: "category", inverse: true, data: rowLabels, ...axis, axisLine: { show: false }, splitLine: { show: false },
+      axisLabel: { ...axis.axisLabel, color: tok("--text-secondary"), interval: 0 } },
+    visualMap: { show: false, type: "continuous", min: -1, max: 1, dimension: 2,
+      inRange: { color: [tok("--diverge-neg"), tok("--diverge-mid"), tok("--diverge-pos")] } },
+    series: [{ type: "heatmap", data,
+      itemStyle: { borderColor: tok("--surface"), borderWidth: 2, borderRadius: 3 },
+      emphasis: { itemStyle: { borderColor: tok("--text-primary"), borderWidth: 2 } } }],
+  }, true);
+}
+
+function renderEfficiency(report) {
+  const axis = axisStyle();
+  const mobile = Object.entries(report.units).filter(([, u]) => u.mobile && u.cost > 0 && u.dps > 0);
+  const factions = Object.keys(FACTION_NAMES).filter((f) => mobile.some(([, u]) => u.faction === f));
+  const point = ([name, u]) => ({ name, value: [u.dps / u.cost * 100, u.health / u.cost], u });
+  chartFor("un-efficiency").setOption({
+    animation: false,
+    textStyle: { fontFamily: tok("--font") },
+    grid: { left: 54, right: 24, top: 12, bottom: 40 },
+    tooltip: itemTooltip((p) => {
+      const u = p.data.u;
+      return tipTable(`${u.display} (${FACTION_NAMES[u.faction]})`, [["Cost", `${fmt(u.cost)} metal`], ["Health", fmt(u.health)],
+        ["DPS", fmt(u.dps)], ["Range", fmt(u.range)], ["Speed", fmt(u.speed)], ["Lanchester", fmt(u.lanchester, 2)]]);
+    }),
+    xAxis: { type: "value", name: "DPS per 100 metal", nameLocation: "middle", nameGap: 26, scale: true, ...axis,
+      nameTextStyle: { color: tok("--text-secondary") } },
+    yAxis: { type: "value", name: "Health per metal", nameLocation: "middle", nameGap: 38, scale: true, ...axis,
+      nameTextStyle: { color: tok("--text-secondary") } },
+    series: factions.map((f) => ({
+      // the report's faction a size up: bigger symbols also win label collisions
+      type: "scatter", name: FACTION_NAMES[f], symbolSize: f === report.faction ? 12 : 9,
+      itemStyle: { color: tok(FACTION_SERIES[f]), borderColor: tok("--surface"), borderWidth: 2 },
+      data: mobile.filter(([, u]) => u.faction === f).map(point),
+      label: { show: true, position: "right", fontSize: 11, color: tok("--text-secondary"), formatter: (p) => p.data.u.display },
+      labelLayout: { hideOverlap: true },
+      emphasis: { focus: "series" },
+    })),
+  }, true);
+  factionLegend("lg-un-eff", factions);
+}
+
+function renderUnitTable(report, rows) {
+  const head = h("tr", {}, h("th", {}, "#"), h("th", { class: "text" }, "Composition"), h("th", {}, "vs best counter"),
+    h("th", {}, "Average"), h("th", {}, "Tight block"), h("th", {}, "Spread out"), h("th", {}, "Worst case"),
+    h("th", { class: "text" }, "Worst against"), h("th", {}, "In robust mix"));
+  const body = rows.map((r, i) => h("tr", {}, h("td", {}, i + 1), h("td", { class: "text" }, r.c.label),
+    h("td", {}, signed(r.counter)), h("td", {}, signed(r.average)), h("td", {}, signed(r.blob)), h("td", {}, signed(r.spread)),
+    h("td", {}, signed(r.worst)), h("td", { class: "text" }, unitName(report, r.worstAgainst, true)),
+    h("td", {}, r.c.robust_weight > 0.005 ? pct(r.c.robust_weight) : "—")));
+  $("#units-table").replaceChildren(h("thead", {}, head), h("tbody", {}, ...body));
+}
+
 /* ====================================================================== tabs, theme, init */
 
-const TABS = ["timeline", "builders", "compare", "recipe", "ingame"];
+const TABS = ["timeline", "builders", "compare", "recipe", "ingame", "units"];
 
 function setTab(tab) {
   S.tab = tab;
@@ -1580,6 +1855,7 @@ function renderTab() {
     if (S.tab !== "recipe" && run) toast("The chart library (web/vendor/echarts.min.js) did not load.", true);
     if (S.tab === "recipe") renderRecipe();
     if (S.tab === "ingame") renderIngame();
+    if (S.tab === "units") renderUnits();
     return;
   }
   if (S.tab === "timeline" && run) renderTimeline(run);
@@ -1587,6 +1863,7 @@ function renderTab() {
   else if (S.tab === "compare") renderCompare();
   else if (S.tab === "recipe") renderRecipe();
   else if (S.tab === "ingame") renderIngame();
+  else if (S.tab === "units") renderUnits();
 }
 
 function applyTheme(theme) {
@@ -1642,6 +1919,9 @@ function wire() {
     S.milestones.push({ at: last ? last.at : 180, unit: last ? last.unit : "corak", count: last ? last.count : 1 });
     renderMilestones();
   });
+  $("#units-report").addEventListener("change", (e) => loadUnitReport(e.target.value));
+  for (const id of ["#units-situation", "#units-rank", "#units-top"]) $(id).addEventListener("change", renderUnits);
+  $("#units-refresh").addEventListener("click", refreshUnitReports);
   $("#guide-plan").addEventListener("click", downloadGuidePlan);
   $("#guide-install").addEventListener("click", installGuidePlan);
   $("#guide-logs-refresh").addEventListener("click", refreshGameLogs);

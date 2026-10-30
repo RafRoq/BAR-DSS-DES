@@ -61,6 +61,22 @@ def test_file_paths_are_confined(folder, name):
         app.file_path(folder, name)
 
 
+def test_unit_reports_are_confined_and_carry_unit_stats(tmp_path, monkeypatch):
+    for name in ("../app.json", "cor_1500.md", "cor_1500.json/..", "x.json"):
+        with pytest.raises(app.BadRequest):
+            app.unit_report(name)
+    report = {"faction": "cor", "budget": 1500, "enemies": ["armpw"], "enemy_counter_mix": {"armpw": 1.0},
+              "game_value": 0.1, "defences": {"corllt": [0.5]},
+              "compositions": [{"mix": {"corak": 1.0}, "label": "Grunt", "scores": [0.1], "blob": [0.1],
+                                "spread": [0.1], "vs_best_counter": 0.1, "robust_weight": 1.0}]}
+    (tmp_path / "cor_1500.json").write_text(json.dumps(report), encoding="utf-8")
+    monkeypatch.setattr(app, "UNIT_REPORTS", str(tmp_path))
+    assert app.unit_reports() == ["cor_1500.json"]
+    loaded = app.unit_report("cor_1500.json")
+    assert set(loaded["units"]) == {"armpw", "corllt", "corak"}
+    assert loaded["units"]["corak"]["dps"] == pytest.approx(74) and not loaded["units"]["corllt"]["mobile"]
+
+
 def test_bad_requests_are_reported():
     with pytest.raises(app.BadRequest):
         app.goal_from({"name": "x", "targets": {}})

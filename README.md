@@ -287,7 +287,9 @@ To check a result: replay the cookbook in a skirmish or the in-game sandbox. Com
 
 `python analyze_units.py [--faction cor] [--budget 1500] [--vs arm,cor,leg]` answers "which early units, and
 which pairs of them, are worth building?" from the unit numbers. It writes `results/units/<faction>_<budget>.md`
-and `.json`.
+and `.json`. The **Units** tab of the web UI (`python app.py`) charts any of these reports: the ranking, a
+matchup heatmap of each composition against each enemy unit, the robust mix and the enemy's best counter,
+static defences, and cost efficiency per unit. Switch between tight-block, spread-out and mean scores there.
 
 1. **Cost efficiency.** Every T1 bot and vehicle with HP, DPS, range and speed, plus a Lanchester score.
    - DPS and range are against a standard T1 bot.

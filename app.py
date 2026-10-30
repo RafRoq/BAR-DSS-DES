@@ -4,10 +4,11 @@
     python app.py --port 9000 --no-browser
 
 Serves web/ and a small JSON API. Listens on 127.0.0.1 only; files can only be read from
-and written to goals/*.yaml and recipes/*.yaml.
+and written to goals/*.yaml and recipes/*.yaml, and unit reports read from results/units/.
 """
 
 import argparse
+import functools
 import json
 import os
 import re
@@ -22,6 +23,8 @@ from urllib.parse import unquote, urlparse
 
 import yaml
 
+from analyze_units import REFERENCE
+from bar_opt.combat import dps, lanchester, load_combat, reach
 from bar_opt.config import EconConfig
 from bar_opt.data import DATA_FILE, load_units
 from bar_opt.goal import Goal, Weights
@@ -36,6 +39,8 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(ROOT, "web")
 FOLDERS = {"goals": os.path.join(ROOT, "goals"), "recipes": os.path.join(ROOT, "recipes")}
 FILE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 _.-]{0,80}\.ya?ml$")
+UNIT_REPORTS = os.path.join(ROOT, "results", "units")
+REPORT_NAME = re.compile(r"^[a-z]{3}_\d+\.json$")
 STATIC = {"/": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"),
           "/style.css": ("style.css", "text/css"),
           "/vendor/echarts.min.js": ("vendor/echarts.min.js", "text/javascript"),  # ECharts 5.5.1, Apache-2.0
@@ -204,6 +209,36 @@ def file_path(folder: str, name: str) -> str:
     return os.path.join(FOLDERS[folder], name)
 
 
+@functools.lru_cache(maxsize=1)
+def combat_units() -> dict:
+    return load_combat()
+
+
+def unit_reports() -> list[str]:
+    """Reports written by analyze_units.py."""
+    if not os.path.isdir(UNIT_REPORTS):
+        return []
+    return sorted(f for f in os.listdir(UNIT_REPORTS) if REPORT_NAME.match(f))
+
+
+def unit_report(name: str) -> dict:
+    """A unit analysis report plus the stats of every unit it names, quoted against the
+    same reference bot as the report."""
+    if not REPORT_NAME.match(name):
+        raise BadRequest("reports are results/units/<faction>_<budget>.json")
+    with open(os.path.join(UNIT_REPORTS, name), encoding="utf-8") as f:
+        report = json.load(f)
+    units = combat_units()
+    ref = units[REFERENCE]
+    names = set(report["enemies"]) | set(report["defences"]) | {n for c in report["compositions"] for n in c["mix"]}
+    report["reference"] = ref.display
+    report["units"] = {
+        n: {"display": u.display, "faction": u.faction, "cost": u.cost, "health": u.health, "speed": u.speed,
+            "mobile": u.mobile, "dps": dps(u, ref), "range": reach(u, ref), "lanchester": 1000 * lanchester(u, ref)}
+        for n in sorted(names) if (u := units.get(n))}
+    return report
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "BAROptimizer/1.0"
 
@@ -337,6 +372,10 @@ class Handler(BaseHTTPRequestHandler):
                 return guide.read_log(data_dir, route[2])
             except ValueError as e:
                 raise BadRequest(str(e))
+        if method == "GET" and route == ["units"]:
+            return {"reports": unit_reports()}
+        if method == "GET" and len(route) == 2 and route[0] == "units":
+            return unit_report(route[1])
         raise FileNotFoundError(path)
 
 

@@ -35,21 +35,42 @@ Benchmark (`python benchmark.py`), weighted cost with finish time in brackets:
 
 The start-of-day numbers used the old cost, so they aren't directly comparable.
 
+## Toolset (2026-10-29, evening)
+
+Built after the first in-game tests:
+
+- **In-game guide widget** (`widget/gui_build_guide.lua`):
+  - follows a plan and logs every game;
+  - Mouse 4 selects the next builder with its building ready to place;
+  - warns when you play another faction than the plan's.
+- **Live companion** (`companion.py`): re-plans from the running game every 2 s through files in
+  `LuaUI/Config`, since widgets can't run programs or open sockets. Tested against a mock of BAR's API and
+  in simulation, not yet in a real game.
+- **Unit analysis** (`analyze_units.py`, `bar_opt/combat.py`):
+  - combat data extracted from BAR;
+  - Lanchester efficiency;
+  - fight simulator with projectiles, scatter and splash, run in tight and spread-out formations;
+  - robust mixes from a zero-sum game.
+- **Milestone goals and roles** (`goals/role_*.yaml`).
+
+What the first games showed:
+- The economy model matched the game exactly: every building took its planned time.
+- The gap came from walking and giving orders: about 1 s per base building, 10–60 s per mex.
+- Wind varies between about 3 and 20 on Supreme Isthmus. The companion plans with the average seen so far.
+
 ## Next
 
-- **Juggernaut still trades finish time for wasted build power.** The gantry saves up for long stretches
-  while every economy cap is reached, so builders idle with resources piling up. The improvement phase
-  cuts that waste but finishes about 50 s later (1442 s against 1390 s). Options:
-  - let caps grow with the goal's cost;
-  - add more economy kinds (storage, more nanos);
-  - or start the next expensive job with a deliberate, partial stall.
-- **"Proven optimal" is narrower than it sounds.** Branch-and-bound only searches the beam's decisions,
-  which start jobs at events or at "affordable from" times. The improvement phase already beat its
-  `armada_bot` optimum (73.97) with 73.7, so the bound isn't a true lower bound for the game.
-- **Consistency.** Two 30 s runs now differ by about 1–3% on `coralab` and gantry, where earlier versions
-  differed by up to 25%. Longer budgets help on T2/T3 goals.
-- **NRPA / MCTS** (former item 3.4): only worth trying if T2/T3 results stop improving with the current
-  operators.
+- **Try the companion in a real game.** Compare its ETA with the outcome, and check that the plan doesn't
+  jump around while it's being followed.
+- **Validate the unit analysis in game.** Sandbox fights (`/cheat`, `/give`) between the top picks, logged
+  by a small widget, to calibrate the simulator. Artillery's value depends a lot on how clumped the enemy
+  is.
+- **Air units.** Not in the analysis yet: no air or anti-air matchups.
+- **Stall weight.** Your own order (the commander helping the T2 lab) beat the plan by 16 s in the model,
+  at the price of 110 s of stall. Decide how much stalling should cost.
+- **Juggernaut.** It still trades finish time for wasted build power while every economy cap is reached.
+- **Other factions** for the optimizer's economy lists. The unit analysis already covers all three.
+- **NRPA / MCTS** (former item 3.4): only if T2/T3 results stop improving with the current operators.
 
 ## Smaller gaps
 

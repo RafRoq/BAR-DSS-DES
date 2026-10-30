@@ -1,0 +1,13 @@
+# Role: hold the front with bots, then tech to the T2 bot lab.
+# Milestones are units to have by a deadline; each second late costs weights.late seconds.
+name: Front with bots, then T2
+targets:
+  coralab: 1
+max_time: 900
+milestones:
+  - at: "2:30"
+    units: {corak: 6}              # 6 Grunts
+  - at: "4:00"
+    units: {corak: 10, corstorm: 3} # 10 Grunts and 3 Aggravators
+config:
+  mex_spots: 4

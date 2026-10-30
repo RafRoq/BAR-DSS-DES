@@ -204,6 +204,9 @@ details.card[open] > summary { margin-bottom: 8px; }
 .unit-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .unit-code { color: var(--text-muted); font-size: 12px; margin-left: 4px; }
 .target-list .empty { background: none; color: var(--text-muted); display: block; }
+.milestone-list li { display: grid; grid-template-columns: auto 58px 52px minmax(0, 1fr) auto; align-items: center; gap: 6px; }
+.milestone-list input[type="text"] { width: 58px; padding: 2px 6px; }
+.milestone-list select { min-width: 0; }
 
 .combo { position: relative; margin-top: 6px; }
 .combo input { width: 100%; }

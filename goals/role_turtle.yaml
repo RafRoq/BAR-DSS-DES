@@ -1,0 +1,12 @@
+# Role: defend the base with towers, then tech to the T2 bot lab.
+name: Turtle, then T2
+targets:
+  coralab: 1
+max_time: 900
+milestones:
+  - at: "2:00"
+    units: {corllt: 2}                 # 2 Guards
+  - at: "3:30"
+    units: {corllt: 2, corhllt: 2}     # and 2 Twin Guards
+config:
+  mex_spots: 4

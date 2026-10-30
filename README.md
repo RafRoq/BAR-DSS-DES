@@ -148,6 +148,10 @@ weights:            # cost = finish_time + stall*lost BP-s + overflow_metal*meta
   overflow_metal: 0.2
   overflow_energy: 0.01
   idle: 0.0067
+  late: 2.0         # per second a milestone is late
+milestones:         # optional: units to have by a deadline ("m:ss" or seconds)
+  - at: "2:30"
+    units: {corak: 6}
 config:             # map and game assumptions, see "Assumptions"
   wind_average: 14.2
   mex_spots: 4
@@ -170,7 +174,25 @@ All penalty terms are reported separately as well as combined in the weighted co
   - Builders held back while storage drains or sits empty don't count either: more build power would only stall.
   - Total idle build power, factories included, is still reported and charted.
 
+- **Late milestones:** for each milestone, the seconds between its deadline and when all its units existed.
+  Milestone units are also part of the final goal, since built units stay built.
+
 Everything is measured until the goal is reached.
+
+### Roles
+
+A role is a goal with milestones: what you must have on the field and when, then where to tech. Three
+presets in `goals/`, built from the unit analysis below:
+
+| File | Role | Result (optimizer, 4 spots) |
+|---|---|---|
+| `coralab.yaml` | Eco: fastest T2 bot lab | Advanced Bot Lab at 4:38 |
+| `role_front_bots.yaml` | Front with bots: 6 Grunts by 2:30, 10 Grunts and 3 Aggravators by 4:00, then T2 | both on time, T2 at 5:57 |
+| `role_front_vehicles.yaml` | Front with vehicles: Pounders and Wolverines by 3:00 and 4:30, then T2 vehicles | about 6 s late on the first, T2 at 6:46 |
+| `role_turtle.yaml` | Turtle: 2 Guards by 2:00, 2 Twin Guards by 3:30, then T2 | both early, T2 at 5:14 |
+
+The gap to the eco build is the price of the role: holding the front with bots costs about 80 s of tech.
+In the web UI, milestones are rows of "by m:ss, count, unit"; rows with the same time form one milestone.
 
 ## How it works
 

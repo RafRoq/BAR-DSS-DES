@@ -120,6 +120,7 @@ class State:
         "metal_make", "mex_metal", "energy_make", "energy_upkeep", "converters",
         "conv_capacity", "counts", "builder_unit", "builder_job", "idle_bp", "total_bp", "idle_helper_bp",
         "jobs", "next_job_id", "spots_used", "upgrades_started", "walking_bp", "free_mexes", "metrics", "recorder",
+        "reached",
         "_last_dt",
     )
 
@@ -142,6 +143,8 @@ class State:
         self.converters: tuple[tuple[float, float], ...] = ()  # (efficiency, capacity)
         self.conv_capacity = 0.0
         self.counts: dict[str, int] = {}
+        # unit -> times at which the 1st, 2nd, ... of it was finished (milestone deadlines)
+        self.reached: dict[str, tuple[float, ...]] = {}
         self.builder_unit: list[str] = []
         self.builder_job: list[int] = []  # job id, or -1 when idle
         self.idle_bp = 0.0
@@ -167,6 +170,7 @@ class State:
         new.energy_make, new.energy_upkeep = self.energy_make, self.energy_upkeep
         new.converters, new.conv_capacity = self.converters, self.conv_capacity
         new.counts = dict(self.counts)
+        new.reached = dict(self.reached)
         new.builder_unit = list(self.builder_unit)
         new.builder_job = list(self.builder_job)
         new.idle_bp, new.total_bp, new.idle_helper_bp = self.idle_bp, self.total_bp, self.idle_helper_bp
@@ -312,6 +316,9 @@ class State:
         u = self.units[name]
         cfg = self.config
         self.counts[name] = self.counts.get(name, 0) + sign
+        times = self.reached.get(name, ())
+        if self.counts[name] > len(times):
+            self.reached[name] = times + (self.time,)
         if self.recorder:
             self.recorder.unit_events.append((self.time, name, sign))
         self.metal_make += sign * u.metal_make

@@ -16,7 +16,14 @@ def _num(value: float) -> float | None:
 
 
 def evaluation_json(evaluation: dict) -> dict:
-    return {k: (v if isinstance(v, bool) else _num(v)) for k, v in evaluation.items()}
+    def value(v):
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, (list, tuple)):
+            return [value(x) for x in v]
+        return _num(v)
+
+    return {k: value(v) for k, v in evaluation.items()}
 
 
 def run_json(state: State, goal: Goal, label: str, kind: str, problems: list[str] | None = None,
@@ -64,7 +71,8 @@ def run_json(state: State, goal: Goal, label: str, kind: str, problems: list[str
         "label": label,
         "kind": kind,
         "goal": {"name": goal.name, "targets": goal.targets, "max_time": goal.max_time,
-                 "weights": asdict(goal.weights), "config": asdict(goal.config)},
+                 "weights": asdict(goal.weights), "config": asdict(goal.config),
+                 "milestones": [{"at": m.at, "units": m.units} for m in goal.milestones]},
         "evaluation": evaluation_json(goal.evaluate(state)),
         "end_time": _num(state.time),
         "problems": problems or [],

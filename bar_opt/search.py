@@ -226,7 +226,8 @@ class Planner:
     def _penalties(self, state: State) -> float:
         m, w = state.metrics, self.goal.weights
         return (w.stall * m.stall_bp_seconds + w.overflow_metal * m.overflow_metal
-                + w.overflow_energy * m.overflow_energy + w.idle * m.wasted_bp_seconds)
+                + w.overflow_energy * m.overflow_energy + w.idle * m.wasted_bp_seconds
+                + w.late * self.goal.lateness(state))
 
     # ------------------------------------------------------------ actions
 

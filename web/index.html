@@ -33,6 +33,9 @@
                  role="combobox" aria-expanded="false" aria-controls="target-results" aria-autocomplete="list">
           <ul class="combo-list" id="target-results" role="listbox" hidden></ul>
         </div>
+        <div class="field-label">Milestones <span class="hint">units to have by a deadline; rows with the same time form one milestone</span></div>
+        <ul class="target-list milestone-list" id="milestones"></ul>
+        <button type="button" class="link" id="milestone-add">+ Add a milestone row</button>
         <label class="field">Give up after <span class="inline"><input id="max-time" type="number" min="30" step="30" value="900"> s</span></label>
         <button type="button" class="link" id="goal-from-recipe">Use the recipe editor's end state as targets</button>
       </section>

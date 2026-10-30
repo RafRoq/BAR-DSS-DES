@@ -94,6 +94,7 @@ const S = {
   catalog: [],
   units: {},              // name -> catalog entry
   targets: [],            // [{unit, count}]
+  milestones: [],         // [{at (s), unit, count}]: rows with the same time form one milestone
   configExtra: {},        // config keys not shown in the form
   runs: [],               // [{id, data, slot}]
   selected: null,         // run id
@@ -121,6 +122,8 @@ const WEIGHT_FIELDS = [
     hint: (w) => `1000 energy lost to full storage adds ${fmt(w * 1000, 1)} s` },
   { key: "idle", label: "Wasted build power", min: 0, max: 0.05, step: 0.0001,
     hint: (w) => `Commander idle for 1 s while resources pile up adds ${fmt(w * 300, 2)} s` },
+  { key: "late", label: "Late milestone", min: 0, max: 10, step: 0.1,
+    hint: (w) => `Each second a milestone is late adds ${fmt(w, 1)} s` },
 ];
 const CONFIG_FIELDS = [
   { key: "wind_average", label: "Average wind", min: 0, max: 25, step: 0.1, hint: () => "Energy/s per wind turbine (turbines cap at 25)" },
@@ -189,7 +192,27 @@ function readGoal() {
     max_time: Number($("#max-time").value) || 900,
     weights: pick("weights"),
     config: { ...S.configExtra, ...pick("config") },
+    milestones: groupMilestones(S.milestones),
   };
+}
+
+/** Milestone rows grouped by deadline: [{at, units: {unit: count}}]. */
+function groupMilestones(rows) {
+  const byTime = new Map();
+  for (const r of rows) {
+    if (!r.unit || !(r.count > 0) || !Number.isFinite(r.at)) continue;
+    const units = byTime.get(r.at) || {};
+    units[r.unit] = Math.max(units[r.unit] || 0, r.count);
+    byTime.set(r.at, units);
+  }
+  return [...byTime.entries()].sort((a, b) => a[0] - b[0]).map(([at, units]) => ({ at, units }));
+}
+
+/** Seconds from 150 or "2:30"; NaN when it is neither. */
+function parseClock(value) {
+  const text = String(value).trim();
+  const m = text.match(/^(\d+):(\d{1,2}(?:\.\d+)?)$/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : (text === "" ? NaN : Number(text));
 }
 
 function readSearch() {
@@ -211,7 +234,36 @@ function writeGoal(goal) {
   const search = { ...d.search, ...(goal.search || {}) };
   for (const f of SEARCH_FIELDS) sliders.search[f.key].set(search[f.key]);
   $("#affordability").value = search.affordability || "both";
+  S.milestones = (goal.milestones || []).flatMap((m) =>
+    Object.entries(m.units || {}).map(([unit, count]) => ({ at: parseClock(m.at), unit, count: Number(count) })));
   renderTargets();
+  renderMilestones();
+}
+
+function renderMilestones() {
+  const list = $("#milestones");
+  list.replaceChildren();
+  if (!S.milestones.length) {
+    list.append(h("li", { class: "empty" }, "None: only the targets count."));
+    return;
+  }
+  const options = [...S.catalog].sort((a, b) => a.display.localeCompare(b.display));
+  S.milestones.forEach((row, i) => {
+    const select = h("select", { "aria-label": `Unit of milestone row ${i + 1}`,
+      onchange: (e) => (row.unit = e.target.value) },
+      ...options.map((u) => h("option", { value: u.name }, `${u.display} (${u.name})`)));
+    select.value = row.unit;
+    list.append(h("li", {},
+      h("span", { class: "hint" }, "by"),
+      h("input", { type: "text", value: Number.isFinite(row.at) ? clock(row.at).replace(/\.\d$/, "") : "",
+        "aria-label": `Deadline of milestone row ${i + 1} (m:ss)`, placeholder: "m:ss",
+        onchange: (e) => (row.at = parseClock(e.target.value)) }),
+      h("input", { type: "number", min: 1, step: 1, value: row.count, "aria-label": `Count of milestone row ${i + 1}`,
+        oninput: (e) => (row.count = Math.max(0, Math.round(Number(e.target.value) || 0))) }),
+      select,
+      h("button", { type: "button", class: "icon", "aria-label": `Remove milestone row ${i + 1}`,
+        onclick: () => { S.milestones.splice(i, 1); renderMilestones(); } }, "✕")));
+  });
 }
 
 /* ====================================================================== form: targets */
@@ -818,8 +870,24 @@ function renderTiles(run) {
       overflow ? h("span", { class: "status status-warning" }, "resources wasted") : h("span", { class: "status status-good" }, "none to speak of")),
     tile("Wasted build power", fmt(ev.wasted_bp_seconds), "idle while resources piled up, build-power-seconds",
       "", h("div", { class: "tile-sub" }, `${fmt(ev.idle_bp_seconds)} idle in total, factories included`)),
+    ...(run.data.goal.milestones || []).length ? [milestoneTile(run)] : [],
     tile("Weighted cost", fmt(ev.cost, 1), "finish time + penalties, lower is better"),
   );
+}
+
+function milestoneTile(run) {
+  const ev = run.data.evaluation;
+  const times = ev.milestone_times || [];
+  const parts = run.data.goal.milestones.map((m, i) =>
+    `${clock(m.at).replace(/\.\d$/, "")} → ${times[i] === null || times[i] === undefined ? "missed" : clock(times[i])}`);
+  const late = ev.milestones_late || 0;
+  const div = document.createElement("div");
+  div.className = "tile";
+  div.append(h("div", { class: "tile-label" }, "Milestones"),
+    h("div", { class: "tile-value" }, late > 0.05 ? `${fmt(late, 1)} s late` : "on time"),
+    h("div", { class: "tile-sub" }, parts.join(" · ")),
+    h("span", { class: `status ${late > 0.05 ? "status-warning" : "status-good"}` }, late > 0.05 ? "late" : "all met"));
+  return div;
 }
 
 /** Interpolated state of a run at time t. */
@@ -1108,6 +1176,7 @@ const COMPARE_ROWS = [
   ["Overflow metal", (ev) => ev.overflow_metal, (v) => fmt(v)],
   ["Overflow energy", (ev) => ev.overflow_energy, (v) => fmt(v)],
   ["Wasted build power (BP-s)", (ev) => ev.wasted_bp_seconds, (v) => fmt(v)],
+  ["Milestones late (s)", (ev) => ev.milestones_late ?? 0, (v) => fmt(v, 1)],
   ["Idle build power, all (BP-s)", (ev) => ev.idle_bp_seconds, (v) => fmt(v)],
   ["Weighted cost", (ev) => ev.cost, (v) => fmt(v, 1)],
 ];
@@ -1567,6 +1636,11 @@ function wire() {
     S.stepsFilter = e.target.value;
     const run = runById(S.selected);
     if (run) renderSteps(run);
+  });
+  $("#milestone-add").addEventListener("click", () => {
+    const last = S.milestones.at(-1);
+    S.milestones.push({ at: last ? last.at : 180, unit: last ? last.unit : "corak", count: last ? last.count : 1 });
+    renderMilestones();
   });
   $("#guide-plan").addEventListener("click", downloadGuidePlan);
   $("#guide-install").addEventListener("click", installGuidePlan);

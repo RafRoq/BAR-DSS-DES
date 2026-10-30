@@ -104,3 +104,23 @@ def test_search_result_replays_exactly_and_beats_hand_recipe():
     hand, _ = replay(main.ARMADA_BOT, ARMADA_GOAL.config, stop_when=ARMADA_GOAL.satisfied)
     assert result.evaluation["cost"] < ARMADA_GOAL.evaluate(hand)["cost"]
     assert result.evaluation["stall_seconds"] == 0
+
+
+def test_milestones_are_planned_for_and_late_ones_cost():
+    from bar_opt.goal import Goal
+
+    goal = Goal.from_dict({"name": "front", "targets": {"corlab": 1}, "max_time": 600,
+                           "milestones": [{"at": "1:30", "units": {"corak": 3}}]})
+    assert goal.targets == {"corlab": 1, "corak": 3}  # milestone units count at the end too
+    assert goal.milestones[0].at == 90
+    result = optimize(goal, SearchConfig(beam_width=20, affordability="refined", improve_seconds=0))
+    times = result.evaluation["milestone_times"]
+    assert times[0] is not None and times[0] <= 90 + 1e-6 and result.evaluation["milestones_late"] == 0
+
+    # The same build with an impossible deadline: every second late costs weights.late.
+    strict = Goal.from_dict({"name": "front", "targets": {"corlab": 1}, "max_time": 600,
+                             "milestones": [{"at": 10, "units": {"corak": 3}}]})
+    state = replay_ops(strict, result.ops)
+    ev = strict.evaluate(state)
+    assert ev["milestones_late"] == pytest.approx(times[0] - 10)
+    assert ev["cost"] == pytest.approx(result.evaluation["cost"] + strict.weights.late * (times[0] - 10))

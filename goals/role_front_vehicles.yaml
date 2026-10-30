@@ -1,0 +1,13 @@
+# Role: hold the front with vehicles, then tech to the T2 vehicle plant.
+# Pounder + Wolverine was the most robust Cortex pair in analyze_units.py (1500-metal armies).
+name: Front with vehicles, then T2
+targets:
+  coravp: 1
+max_time: 1200
+milestones:
+  - at: "3:00"
+    units: {corlevlr: 2, corwolv: 1}   # Pounders and a Wolverine
+  - at: "4:30"
+    units: {corlevlr: 4, corwolv: 2}
+config:
+  mex_spots: 4

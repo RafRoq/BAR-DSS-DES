@@ -221,13 +221,14 @@
           <div class="run-title" id="guide-title"></div>
           <div class="tiles" id="guide-tiles"></div>
           <div class="chart-pair">
-            <figure class="chart-card"><figcaption><h3>Delay per step <span class="hint">game start − planned start, s</span></h3></figcaption><div class="chart" id="guide-delay"></div></figure>
+            <figure class="chart-card"><figcaption><h3>Behind plan <span class="hint">game start − planned start of each step, s</span></h3></figcaption><div class="chart" id="guide-delay"></div></figure>
             <figure class="chart-card"><figcaption><h3>Metal stored</h3><div class="legend" id="lg-guide-metal"></div></figcaption><div class="chart" id="guide-metal"></div></figure>
           </div>
           <div class="chart-pair">
             <figure class="chart-card"><figcaption><h3>Metal income <span class="hint">per second</span></h3><div class="legend" id="lg-guide-mincome"></div></figcaption><div class="chart" id="guide-mincome"></div></figure>
             <figure class="chart-card"><figcaption><h3>Energy stored</h3><div class="legend" id="lg-guide-energy"></div></figcaption><div class="chart" id="guide-energy"></div></figure>
           </div>
+          <p class="hint">“Wait before” is how much later a step started than planned, compared with the step before: time spent walking or giving orders. Build times show whether the economy plan held: when they match, the economy did what the plan said and the remaining gap is execution.</p>
           <div class="table-scroll"><table class="metrics" id="guide-table"></table></div>
         </div>
       </section>

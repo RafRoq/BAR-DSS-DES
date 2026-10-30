@@ -195,7 +195,7 @@ def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
         w.GameFrame(w, frame["n"])
     printed.clear()
     w.DrawScreen(w)
-    assert any("Build done at" in p and "(+3s)" in p for p in printed)
+    assert any("Goal reached at" in p and "(+3s)" in p for p in printed)
     w.Shutdown(w)
 
     logs = list(config.glob("build_guide_log*.json"))
@@ -206,6 +206,8 @@ def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
     assert all(d == pytest.approx(3, abs=0.05) for d in delays)
     assert all(s.get("actual_finish") for s in log["steps"])
     assert log["extra"] == [] and log["commander"] == "corcom"
+    assert log["plan_targets"] == GOAL.targets
+    assert log["goal_reached"] == pytest.approx(plan["finish_time"] + 3, abs=0.05)
 
     # Playing another faction: the panel says so.
     commander["name"] = "armcom"

@@ -1386,30 +1386,69 @@ const delta = (a, b) => (isTime(a) && isTime(b) ? a - b : null);
 const fmtDelta = (d) => (d === null ? "—" : `${d > 0 ? "+" : ""}${fmt(d, 1)} s`);
 const deltaClass = (d) => (d === null ? "" : d >= 2 ? "late" : d <= -2 ? "early" : "");
 
-function renderGuideCompare(log) {
+/** When the plan's targets were finished: [plan, game]. Logs from before targets were logged
+ * fall back to the step the plan finishes last, which is where the plan reaches its goal. */
+function goalTimes(log) {
   const steps = log.steps;
+  let targets = log.plan_targets;
+  if (!targets || !Object.keys(targets).length) {
+    const last = steps.reduce((a, s) => (!a || s.planned_finish > a.planned_finish ? s : a), null);
+    targets = last ? { [last.unit]: steps.filter((s) => s.unit === last.unit && s.planned_finish <= last.planned_finish).length } : {};
+  }
+  const nth = (times, n) => (times.length >= n ? times.sort((a, b) => a - b)[n - 1] : null);
+  let plan = 0, game = 0;
+  for (const [unit, n] of Object.entries(targets)) {
+    const mine = steps.filter((s) => s.unit === unit);
+    plan = Math.max(plan, nth(mine.map((s) => s.planned_finish), n) ?? Infinity);
+    const g = nth(mine.filter((s) => isTime(s.actual_finish)).map((s) => s.actual_finish), n);
+    game = g === null || game === null ? null : Math.max(game, g);
+  }
+  return [isTime(log.plan_finish_time) ? log.plan_finish_time : plan, game];
+}
+
+/** Per step: how far behind plan it started, how much of that is new (the wait before it:
+ * walking, giving orders; only falling further behind than ever counts, so building steps in
+ * another order is not counted twice), and its build time in plan and game. */
+function stepTimings(steps) {
+  let behind = 0;
+  return steps.map((s) => {
+    const delay = delta(s.actual_start, s.planned_start);
+    const wait = delay === null ? null : Math.max(0, delay - behind);
+    if (delay !== null) behind = Math.max(behind, delay);
+    return { ...s, delay, wait, planBuild: s.planned_finish - s.planned_start,
+      gameBuild: delta(s.actual_finish, s.actual_start) };
+  });
+}
+
+function renderGuideCompare(log) {
+  const steps = stepTimings(log.steps);
   const started = steps.filter((s) => isTime(s.actual_start));
-  const finished = steps.filter((s) => isTime(s.actual_finish));
-  const planEnd = Math.max(0, ...steps.map((s) => s.planned_finish || 0));
-  const gameEnd = finished.length === steps.length ? Math.max(0, ...finished.map((s) => s.actual_finish)) : null;
-  const delays = started.map((s) => s.actual_start - s.planned_start);
-  const worst = started.reduce((w, s) => (!w || s.actual_start - s.planned_start > w.actual_start - w.planned_start ? s : w), null);
+  const built = steps.filter((s) => s.gameBuild !== null);
+  const [planGoal, gameGoal] = goalTimes(log);
+  // Waits that held up the goal: steps started before it was reached
+  const beforeGoal = started.filter((s) => gameGoal === null || s.actual_start < gameGoal);
+  const waited = beforeGoal.reduce((sum, s) => sum + s.wait, 0);
+  const longest = beforeGoal.reduce((w, s) => (!w || s.wait > w.wait ? s : w), null);
+  const planBuild = built.reduce((sum, s) => sum + s.planBuild, 0);
+  const gameBuild = built.reduce((sum, s) => sum + s.gameBuild, 0);
+  const buildRatio = planBuild > 0 ? gameBuild / planBuild - 1 : null;
   const extra = Array.isArray(log.extra) ? log.extra : [];
+  const planEnd = Math.max(planGoal, ...steps.map((s) => s.planned_finish || 0));
 
   $("#guide-title").replaceChildren(`${log.plan_name || "Build guide"}`,
     h("span", { class: "hint" }, [log.map, log.recorded].filter(Boolean).join(" · ")));
   const tile = (label, value, sub) => h("div", { class: "tile" }, h("div", { class: "tile-label" }, label),
     h("div", { class: "tile-value" }, value), sub ? h("div", { class: "tile-sub" }, sub) : null);
   $("#guide-tiles").replaceChildren(
-    tile("Build done", gameEnd === null ? "not finished" : clock(gameEnd),
-      gameEnd === null ? `${finished.length} of ${steps.length} steps finished` : `plan ${clock(planEnd)} · ${fmtDelta(gameEnd - planEnd)}`),
+    tile("Goal reached", gameGoal === null ? "not reached" : clock(gameGoal),
+      gameGoal === null ? `plan ${clock(planGoal)}` : `plan ${clock(planGoal)} · ${fmtDelta(gameGoal - planGoal)}`),
+    tile("Build times vs plan", buildRatio === null ? "—" : `${buildRatio >= 0 ? "+" : ""}${fmt(buildRatio * 100, 1)}%`,
+      `${built.length} steps · the economy plan` + (buildRatio !== null && Math.abs(buildRatio) < 0.05 ? " held" : "")),
+    tile("Waiting before steps", fmtDelta(waited), "walking and giving orders, until the goal"),
+    tile("Longest wait", longest ? fmtDelta(longest.wait) : "—", longest ? `before step ${longest.n}: ${longest.display}` : ""),
     tile("Steps started", `${started.length} / ${steps.length}`,
       extra.length ? `${extra.length} ${extra.length === 1 ? "unit" : "units"} built that ${extra.length === 1 ? "is" : "are"} not in the plan`
         : "no units outside the plan"),
-    tile("Average start delay", delays.length ? fmtDelta(delays.reduce((a, b) => a + b, 0) / delays.length) : "—",
-      "game start − planned start"),
-    tile("Biggest delay", worst ? fmtDelta(worst.actual_start - worst.planned_start) : "—",
-      worst ? `step ${worst.n}: ${worst.display}` : ""),
   );
 
   const c1 = tok("--series-1"), c2 = tok("--series-2");
@@ -1436,13 +1475,15 @@ function renderGuideCompare(log) {
   chart.group = "guide";
   echarts.connect("guide");
 
-  const head = h("tr", {}, ...["#", "Unit", "Builder", "Plan start", "Game start", "Δ start", "Plan done", "Game done", "Δ done"]
-    .map((t, i) => h("th", { class: i === 1 || i === 2 ? "text" : "" }, t)));
+  const head = h("tr", {}, ...["#", "Unit", "Builder", "Plan start", "Game start", "Behind plan", "Wait before",
+    "Build time plan", "Build time game"].map((t, i) => h("th", { class: i === 1 || i === 2 ? "text" : "" }, t)));
   const rows = steps.map((s) => {
-    const ds = delta(s.actual_start, s.planned_start), df = delta(s.actual_finish, s.planned_finish);
+    const slower = s.gameBuild === null ? null : s.gameBuild - s.planBuild;
     return h("tr", {}, h("td", {}, s.n), h("td", { class: "text" }, s.display), h("td", { class: "text" }, s.builder),
-      h("td", {}, clock(s.planned_start)), h("td", {}, clock(s.actual_start ?? null)), h("td", { class: deltaClass(ds) }, fmtDelta(ds)),
-      h("td", {}, clock(s.planned_finish)), h("td", {}, clock(s.actual_finish ?? null)), h("td", { class: deltaClass(df) }, fmtDelta(df)));
+      h("td", {}, clock(s.planned_start)), h("td", {}, clock(s.actual_start ?? null)),
+      h("td", { class: deltaClass(s.delay) }, fmtDelta(s.delay)), h("td", { class: deltaClass(s.wait) }, fmtDelta(s.wait)),
+      h("td", {}, `${fmt(s.planBuild, 1)} s`),
+      h("td", { class: deltaClass(slower) }, s.gameBuild === null ? "—" : `${fmt(s.gameBuild, 1)} s`));
   });
   $("#guide-table").replaceChildren(h("thead", {}, head), h("tbody", {}, ...rows));
 }

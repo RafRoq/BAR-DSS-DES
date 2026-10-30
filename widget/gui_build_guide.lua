@@ -106,6 +106,28 @@ local function loadPlan()
 	end
 end
 
+-- When every target of the plan was finished in the game, or nil.
+local function goalTime()
+	if not plan or type(plan.targets) ~= "table" then
+		return nil
+	end
+	local reached = 0
+	for unit, count in pairs(plan.targets) do
+		local times = {}
+		for _, s in ipairs(steps) do
+			if s.unit == unit and s.actual_finish then
+				times[#times + 1] = s.actual_finish
+			end
+		end
+		if #times < count then
+			return nil
+		end
+		table.sort(times)
+		reached = math.max(reached, times[count])
+	end
+	return reached
+end
+
 local function nextIndex()
 	for i, s in ipairs(steps) do
 		if not s.actual_start then
@@ -167,6 +189,9 @@ local function writeLog()
 		plan_name = plan.name,
 		plan_label = plan.label,
 		plan_commander = plan.commander,
+		plan_targets = plan.targets,
+		plan_finish_time = plan.finish_time,
+		goal_reached = goalTime(),
 		commander = myCommander,
 		map = Game and Game.mapName,
 		game_version = Game and Game.gameVersion,
@@ -329,20 +354,12 @@ function widget:DrawScreen()
 				math.floor(m), math.floor(pr[2]), math.floor(e), math.floor(pr[3])), 0.8, 0.8, 0.8)
 		end
 		local nxt = nextIndex()
-		if nxt > #steps then
-			local planned, mine = 0, 0
-			for _, s in ipairs(steps) do
-				planned = math.max(planned, s.finish or 0)
-				mine = s.actual_finish and math.max(mine, s.actual_finish) or nil
-				if not mine then
-					break
-				end
-			end
-			if mine then
-				add(string.format("Build done at %s, plan %s (%s)", clock(mine), clock(planned), signed(mine - planned)), 0.6, 1, 0.6)
-			else
-				add(string.format("All %d steps started. Plan reaches the goal at %s", #steps, clock(plan.finish_time)), 0.6, 1, 0.6)
-			end
+		local reached = goalTime()
+		if reached and plan.finish_time then
+			add(string.format("Goal reached at %s, plan %s (%s)", clock(reached), clock(plan.finish_time),
+				signed(reached - plan.finish_time)), 0.6, 1, 0.6)
+		elseif nxt > #steps then
+			add(string.format("All %d steps started. Plan reaches the goal at %s", #steps, clock(plan.finish_time)), 0.6, 1, 0.6)
 		end
 		-- Rows: the last few finished steps, every step under construction, the next steps.
 		local show, finished = {}, {}

@@ -261,14 +261,50 @@ These are worth checking in-game or in a replay:
 
 To check a result: replay the cookbook in a skirmish or the in-game sandbox. Compare when each building finishes, and the storage and income values at a few timestamps, with the graph.
 
+## Unit analysis
+
+`python analyze_units.py [--faction cor] [--budget 1500] [--vs arm,cor,leg]` answers "which early units, and
+which pairs of them, are worth building?" from the unit numbers. It writes `results/units/<faction>_<budget>.md`
+and `.json`.
+
+1. **Cost efficiency.** Every T1 bot and vehicle with HP, DPS, range and speed, plus a Lanchester score.
+   - DPS and range are against a standard T1 bot.
+   - Cost is metal plus energy/70.
+   - The Lanchester score is DPS × HP / cost². An army's strength grows with DPS × HP × count², so this is
+     what each unit of cost is worth in a straight fight.
+2. **Simulated fights** (`bar_opt/combat.py`). Equal-cost armies start 900 elmos apart and close in:
+   - Each unit targets the nearest enemy it can damage, stops when that enemy is in range, and fires whole
+     shots, so overkill is wasted.
+   - Shells fly at their weapon's speed and aim where the target will be. A target that stops or turns is
+     missed, and moving targets are only roughly predictable. Missiles home in; beams hit at once.
+   - Each shot lands with the weapon's scatter (`accuracy` + `sprayangle`) and damages every enemy body
+     within its blast, less towards the edge.
+   - Every fight runs twice, with both armies in a tight block and spread out. Artillery and other splash
+     weapons swing a lot between the two.
+3. **Best compositions.** Every single unit type and every 50/50 pair of your faction is fought against
+   every early ground unit of the chosen factions.
+   - The results form a zero-sum game, solved by fictitious play.
+   - Compositions are ranked by their score against the enemy's best counter-mix.
+   - The report also gives each composition's worst matchup, the most robust mix, and the enemy units that
+     answer you best.
+4. **Static defences.** Each T1 defence, at the same budget, holding against each attacker.
+
+The combat data (health, speed, armour class, categories, footprint, and weapons with damage per armour
+class, reload, burst, range, splash, scatter, speed and target categories) is extracted with the rest of
+`bar_units.json`. It reads the Lua tables as text, applies BAR's own category rules from
+`gamedata/alldefs_post.lua`, and takes armour classes from `gamedata/armordefs.lua`.
+
+**Not modelled:** micro and kiting, terrain, target priorities, formations reshaping, friendly fire,
+shields, cloak, air and veterancy. Use the ranking as a first filter and try the top picks in game.
+
 ## Data
 
-`bar_units.json` is generated from BAR's own unit definitions by `bar_unit_extractor.py`. It contains stats, display names
-and build options, all from the same BAR commit (recorded in the file). To refresh it after a balance patch:
+`bar_units.json` is generated from BAR's own unit definitions by `bar_unit_extractor.py`. It contains economy and
+combat stats, display names and build options, all from the same BAR commit (recorded in the file). To refresh it after a balance patch:
 
 ```sh
 git clone --depth 1 --filter=blob:none --sparse https://github.com/beyond-all-reason/Beyond-All-Reason.git
-git -C Beyond-All-Reason sparse-checkout set units language/en
+git -C Beyond-All-Reason sparse-checkout set units gamedata language/en
 python bar_unit_extractor.py Beyond-All-Reason
 ```
 

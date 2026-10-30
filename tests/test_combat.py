@@ -3,8 +3,8 @@
 import pytest
 
 import bar_unit_extractor as extractor
-from bar_opt.combat import (army, can_target, compositions, dps, early_units, fight, lanchester, load_combat,
-                            reach, solve_zero_sum)
+from bar_opt.combat import (army, can_target, compositions, dps, early_units, even_armies, fight, ground_army,
+                            lanchester, load_combat, reach, solve_zero_sum)
 
 
 @pytest.fixture(scope="module")
@@ -72,6 +72,29 @@ def test_fights_are_plausible_and_repeatable(units):
     assert again.score == fight(army(units, {"corwolv": 1}, 1000), army(units, {"armpw": 1}, 1000), seed=3).score
     tower = fight(army(units, {"corllt": 1}, 1000), army(units, {"armpw": 1}, 1000))
     assert tower.score > 0.5  # equal-cost raiders walking into laser towers lose
+
+
+def test_weapon_details_from_bar_data(units):
+    # Prometheus' heat ray fires for 1.8 s, then cools down for 3 s
+    assert dps(units["legaheattank"], units["corak"]) == pytest.approx(25 / 0.033 * 1.8 / 4.8)
+    # amphibious units' torpedoes cannot hit a bot on land; their other weapon can
+    assert len(units["coramph"].weapons) == 1 and len(units["legamph"].weapons) == 1
+
+
+def test_t2_armies_leave_out_crawling_bombs_and_decoys(units):
+    armada = ground_army(units, "arm", tech=2)
+    assert "armbull" in armada and "armvader" not in armada and "armdecom" not in armada
+    assert "armack" not in armada and "armaak" not in armada  # builders and anti-air
+    cortex = ground_army(units, "cor", tech=2)
+    assert "corsumo" in cortex and "corroach" not in cortex and "cordecom" not in cortex
+    assert ground_army(units, "cor", tech=1) == [n for n in early_units(units, "cor")
+                                                 if dps(units[n], units["corak"]) > 0]
+
+
+def test_even_armies_cost_about_the_same(units):
+    a, b = even_armies(units, {"corak": 1.0}, {"corsumo": 1.0}, 3000)
+    cost_a, cost_b = sum(u.cost for u in a), sum(u.cost for u in b)
+    assert len(b) == 1 and abs(cost_a - cost_b) <= units["corak"].cost / 2
 
 
 def test_zero_sum_solver_and_compositions():

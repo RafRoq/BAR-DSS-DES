@@ -39,6 +39,8 @@ FACTIONS = {"arm": "Armada", "cor": "Cortex", "leg": "Legion"}
 # The factories and constructors whose armed options count as "early" (T1)
 EARLY_FACTORIES = {"arm": ("armlab", "armvp"), "cor": ("corlab", "corvp"), "leg": ("leglab", "legvp")}
 EARLY_BUILDERS = {"arm": "armck", "cor": "corck", "leg": "legck"}
+ADVANCED_FACTORIES = {"arm": ("armalab", "armavp"), "cor": ("coralab", "coravp"), "leg": ("legalab", "legavp")}
+MIN_RANGE = 50.0  # shorter "weapons" belong to crawling bombs, which explode on contact
 
 
 @dataclass(frozen=True)
@@ -54,6 +56,7 @@ class Weapon:
     velocity: float = 0.0  # elmos per second; 0 = hits when fired
     scatter: float = 0.0  # radians of spread (accuracy + sprayangle)
     guided: bool = False  # missiles follow their target
+    duty: float = 1.0  # share of the time it fires (sweep-fire heat rays cool down between sweeps)
 
 
 @dataclass(frozen=True)
@@ -92,7 +95,10 @@ def load_combat(path: str = DATA_FILE) -> dict[str, CombatUnit]:
         for w in c["weapons"]:
             if w.get("commandfire") or w.get("paralyzer") or w.get("stockpile") or not w.get("reloadtime"):
                 continue  # manual (D-gun), stun-only and stockpiled weapons are not part of steady DPS
+            if w.get("weapontype") == "TorpedoLauncher":
+                continue  # torpedoes and depth charges only hit units in water; these fights are on land
             only = w.get("onlytargetcategory")
+            fire, cool = w.get("sweepfire") or (1.0, 0.0)
             weapons.append(Weapon(
                 name=w["name"], range=w.get("range", 0.0), reload=w["reloadtime"], damage=dict(w["damage"]),
                 shots=(w.get("projectiles") or 1.0) * (w.get("burst") or 1.0),
@@ -100,7 +106,7 @@ def load_combat(path: str = DATA_FILE) -> dict[str, CombatUnit]:
                 only=frozenset(only.split()) if only else None,
                 velocity=0.0 if w.get("weapontype") in INSTANT_TYPES else (w.get("weaponvelocity") or 0.0),
                 scatter=((w.get("accuracy") or 0.0) + (w.get("sprayangle") or 0.0)) * math.pi / 45055,
-                guided=w.get("weapontype") in GUIDED_TYPES))
+                guided=w.get("weapontype") in GUIDED_TYPES, duty=fire / (fire + cool)))
         u = entry["unit"]
         units[name] = CombatUnit(
             name=name, display=entry.get("displayName") or name, faction=name[:3],
@@ -117,7 +123,7 @@ def can_target(weapon: Weapon, target: CombatUnit) -> bool:
 
 def volley(weapon: Weapon, target: CombatUnit) -> float:
     per_shot = weapon.damage.get(target.armor, weapon.damage.get("default", 0.0))
-    return per_shot * weapon.shots
+    return per_shot * weapon.shots * weapon.duty  # sweep fire spread evenly over its cycle
 
 
 def dps(unit: CombatUnit, target: CombatUnit) -> float:
@@ -151,6 +157,23 @@ def early_units(units: dict[str, CombatUnit], faction: str, mobile: bool = True)
     return out
 
 
+def ground_army(units: dict[str, CombatUnit], faction: str, tech: int = 1, reference: str = "corak") -> list[str]:
+    """Mobile units from a faction's T1 (tech 1) or T2 (tech 2) bot lab and vehicle plant that
+    can fight ground units. Builders, anti-air, spies, crawling bombs and decoy commanders are
+    left out."""
+    if tech == 1:
+        candidates = early_units(units, faction)
+    else:
+        with open(DATA_FILE, encoding="utf-8") as f:
+            raw = json.load(f)["units"]
+        options = [o for factory in ADVANCED_FACTORIES[faction] for o in raw[factory]["buildOptions"]]
+        candidates = [n for n in dict.fromkeys(options)
+                      if n in units and units[n].mobile and "VTOL" not in units[n].categories]
+    ref = units[reference]
+    return [n for n in candidates
+            if dps(units[n], ref) > 0 and reach(units[n], ref) >= MIN_RANGE and not n.endswith("decom")]
+
+
 # ---------------------------------------------------------------- fight simulation
 
 BLOB, SPREAD = 32.0, 96.0  # elmos between units: a tight block, and a spread-out army
@@ -178,6 +201,18 @@ def army(units: dict[str, CombatUnit], mix: dict[str, float], budget: float) -> 
         u = units[name]
         out += [u] * max(1, round(budget * share / total / u.cost))
     return out
+
+
+def even_armies(units: dict[str, CombatUnit], mix_a: dict[str, float], mix_b: dict[str, float],
+                budget: float) -> tuple[list[CombatUnit], list[CombatUnit]]:
+    """Armies `a` and `b` of nearly the same cost. Expensive units come in big steps (one
+    3000-metal Mammoth more or less), so the side with the priciest unit is bought first and
+    the other side spends what it actually cost."""
+    lumpy_a = max(units[n].cost for n in mix_a) >= max(units[n].cost for n in mix_b)
+    first, second = (mix_a, mix_b) if lumpy_a else (mix_b, mix_a)
+    bought = army(units, first, budget)
+    matched = army(units, second, sum(u.cost for u in bought))
+    return (bought, matched) if lumpy_a else (matched, bought)
 
 
 def _formation(n: int, x0: float, facing: float, spacing: float) -> np.ndarray:

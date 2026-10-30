@@ -59,6 +59,7 @@ CUSTOM_FIELDS = {
     "energyconv_capacity": "energyConversionCapacity",
     "energyconv_efficiency": "energyConversionEfficiency",
     "techlevel": "techLevel",
+    "geothermal": "geothermal",  # 1: must stand on a geothermal vent
 }
 
 
@@ -290,6 +291,10 @@ def parse_combat(unit: dict, armor_class: str) -> dict:
                 weapon[key] = slot[key]
         if wd.get("weapontype") == "BeamLaser" and wd.get("impactonly") == 1:
             weapon["areaofeffect"], weapon["edgeeffectiveness"] = 11.0, 1.0  # as alldefs_post.lua sets it
+        custom = wd.get("customparams") if isinstance(wd.get("customparams"), dict) else {}
+        if custom.get("sweepfire_firetime") and custom.get("sweepfire_reloadtime"):
+            # heat rays that fire for a while, then cool down (Legion's Prometheus, Telchine)
+            weapon["sweepfire"] = [custom["sweepfire_firetime"], custom["sweepfire_reloadtime"]]
         weapons.append(weapon)
     return {
         "health": unit.get("health") or 0.0,

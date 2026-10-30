@@ -35,6 +35,7 @@ class UnitDef:
     kind: str
     build_options: tuple[str, ...]
     description: str = ""
+    geothermal: bool = False  # must stand on a geothermal vent
 
     @property
     def is_builder(self) -> bool:
@@ -87,6 +88,7 @@ def _unit_def(name: str, entry: dict) -> UnitDef:
         kind=kind,
         build_options=options,
         description=entry.get("description", ""),
+        geothermal=bool(u.get("geothermal")),
     )
 
 

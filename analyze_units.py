@@ -14,16 +14,15 @@ import json
 import os
 import time
 
-from bar_opt.combat import (BLOB, FACTIONS, SPREAD, army, compositions, dps, early_units, fight, lanchester,
-                            load_combat, mix_label, reach, solve_zero_sum)
+from bar_opt.combat import (BLOB, FACTIONS, SPREAD, army, compositions, dps, early_units, fight, ground_army,
+                            lanchester, load_combat, mix_label, reach, solve_zero_sum)
 
 REFERENCE = "corak"  # damage and range are quoted against a standard T1 bot
 
 
 def ground_units(units, faction):
     """Early mobile units that can hurt ground units (AA-only and builders are left out)."""
-    ref = units[REFERENCE]
-    return [n for n in early_units(units, faction) if dps(units[n], ref) > 0]
+    return ground_army(units, faction, tech=1, reference=REFERENCE)
 
 
 def main():

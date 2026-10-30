@@ -45,6 +45,7 @@ class Step:
     helpers: tuple[Ref, ...] = ()  # assist from the moment the job starts
     target: int = -1  # assist steps: index of the build step to help
     not_before: float = 0.0
+    assist_unit: str | None = None  # assist steps without a target: help a running job of this unit
 
 
 @dataclass
@@ -58,21 +59,30 @@ class Decoded:
 
 def steps_from_result(goal: Goal, result: SearchResult) -> list[Step]:
     """Turn a build into steps, keeping its timing where builders waited on purpose."""
-    state = replay_ops(goal, result.ops)
-    rec = state.recorder
+    return steps_from_recorder(replay_ops(goal, result.ops).recorder)
+
+
+def steps_from_recorder(rec, running: dict[int, int] | None = None) -> list[Step]:
+    """Steps of a recorded run. `running` maps jobs already under way when the run began to
+    how many builders were on them then; builders sent later become "help the running
+    <unit>" steps."""
+    running = running or {}
     refs = _refs(rec.builder_units)
     busy_until = dict(rec.builder_spawn)  # builder -> time it last became free
     events = []
     for job_id, job in rec.jobs.items():
         for k, (t, b) in enumerate(job["joins"]):
-            events.append((t, k, job_id, b))
+            if k >= running.get(job_id, 0):
+                events.append((t, k, job_id, b))
     events.sort()
     steps: list[Step] = []
     step_of_job: dict[int, int] = {}
     for t, k, job_id, b in events:
         job = rec.jobs[job_id]
         waited = t - busy_until.get(b, 0.0) > 0.05
-        if k == 0:
+        if job_id in running:
+            steps.append(Step(None, refs[b], assist_unit=job["unit"], not_before=t if waited else 0.0))
+        elif k == 0:
             helpers = tuple(refs[hb] for ht, hb in job["joins"][1:] if abs(ht - t) < 1e-9)
             step_of_job[job_id] = len(steps)
             steps.append(Step(job["unit"], refs[b], helpers, not_before=t if waited else 0.0))
@@ -123,7 +133,10 @@ def decode(goal: Goal, steps: list[Step], start: State | None = None) -> Decoded
             if state.builder_job[b] >= 0:
                 break
             if step.unit is None:
-                job = job_of_step.get(step.target)
+                if step.assist_unit is not None:
+                    job = next((j.id for j in state.jobs.values() if j.unit == step.assist_unit), None)
+                else:
+                    job = job_of_step.get(step.target)
                 if job is not None and job in state.jobs and state.can_assist(b, job) is None:
                     state.assist(b, job)
                     ops.append(("assist", b, job))
@@ -174,8 +187,12 @@ def remaining_steps(steps: list[Step], started: dict[str, int]) -> list[Step]:
                 continue
             new_index[i] = len(kept)
             kept.append(step)
+        elif step.assist_unit is not None:
+            kept.append(step)
         elif step.target in new_index:
             kept.append(replace(step, target=new_index[step.target]))
+        elif 0 <= step.target < len(steps):  # its build has started: help the running one
+            kept.append(replace(step, target=-1, assist_unit=steps[step.target].unit))
     return kept
 
 
@@ -332,7 +349,7 @@ def _fix_targets(steps: list[Step], mapping: dict[int, int]) -> list[Step]:
     """Keep assist steps pointing at the same build step after a reorder; drop orphans."""
     out = []
     for x in steps:
-        if x.unit is None:
+        if x.unit is None and x.assist_unit is None:
             if x.target not in mapping:
                 continue
             x.target = mapping[x.target]

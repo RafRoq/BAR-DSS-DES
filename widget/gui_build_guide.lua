@@ -9,6 +9,12 @@ local widget = widget ---@type Widget
 -- with /luaui buildguide_autopick). Factory steps only select the factory: you click the unit.
 -- The widget never gives orders itself, so it also works where unit control widgets are off.
 --
+-- Companion: every 2 s the widget writes the game state to LuaUI/Config/build_guide_state.json.
+-- When companion.py (BAR build order optimizer) runs next to the game, it re-plans from that
+-- state and writes the next steps to LuaUI/Config/build_guide_live.json; the panel and the
+-- place-next key then follow the live plan. Widgets cannot run programs or open sockets, so
+-- the two sides talk through these files.
+--
 -- Install: copy this file to <BAR data folder>/LuaUI/Widgets/ and the plan exported by the
 -- optimizer to <BAR data folder>/LuaUI/Config/build_guide_plan.json, then enable
 -- "Build Order Guide" in the widget list (F11).
@@ -40,6 +46,10 @@ local SAMPLE_EVERY = 5 -- seconds between resource samples
 local SAVE_EVERY = 30 -- seconds between log writes (also written on every finished step)
 local ROWS_BEFORE, ROWS_AFTER = 2, 6 -- steps shown around the next one
 local ON_PLAN = 2 -- seconds of difference still shown as "on plan"
+local STATE_FILE = "LuaUI/Config/build_guide_state.json"
+local LIVE_FILE = "LuaUI/Config/build_guide_live.json"
+local STATE_EVERY, LIVE_EVERY = 2, 1 -- seconds between state writes and live plan reads
+local LIVE_STALE = 15 -- a live plan older than this (game seconds) is ignored
 local DEFAULT_KEY = "sc_mouse4" -- the back thumb button: free in BAR's keybindings (Mouse 5 selects squads)
 local nextKey = DEFAULT_KEY
 
@@ -67,6 +77,8 @@ local myBuilders = {} -- unit name -> unitIDs in the order they were finished (p
 local autoPick = true
 local pendingPick -- build command to activate once the selection's build menu is ready
 local checkSelection -- selected unit to consider for auto-pick on the next update
+local live -- the companion's latest plan, while it is fresh
+local stateSeq, lastState, lastLive = 0, -STATE_EVERY, -LIVE_EVERY
 local hidden = false
 local lastSample, lastSave = -SAMPLE_EVERY, 0
 
@@ -218,7 +230,9 @@ local function writeLog()
 		steps = out,
 		extra = extra,
 		plan_resources = plan.resources,
-		resources = samples, -- [t, metal, energy, metal income, energy income]
+		resources = samples, -- [t, metal, energy, metal income, energy income, wind]
+		wind_min = Game and Game.windMin,
+		wind_max = Game and Game.windMax,
 	}
 	local ok, encoded = pcall(Json.encode, log)
 	if not ok then
@@ -253,14 +267,41 @@ end
 
 -- ------------------------------------------------------------------ place next
 
+-- The steps to follow: the companion's live plan while it runs, else the plan file's.
+local function activeSteps()
+	return live and live.steps or steps
+end
+
+local function isBuild(step)
+	return step.action == nil or step.action == "build"
+end
+
 local function builderOf(step)
+	if step.builder_id then
+		return step.builder_id
+	end
+	if step.action then
+		return nil -- a live step for a builder the plan makes later
+	end
 	local list = step.builder_unit and myBuilders[step.builder_unit]
 	return list and list[step.builder_n or 1]
 end
 
 local function nextStepOf(unitID)
-	for _, s in ipairs(steps) do
-		if not s.actual_start and not s.ordered and builderOf(s) == unitID then
+	for _, s in ipairs(activeSteps()) do
+		if isBuild(s) and not s.actual_start and not s.ordered and builderOf(s) == unitID then
+			return s
+		end
+	end
+end
+
+-- The first step still to start: the place-next key's default and the panel's hint.
+local function firstOpenStep()
+	if not live then
+		return steps[nextIndex()]
+	end
+	for _, s in ipairs(live.steps or {}) do
+		if isBuild(s) and not s.ordered then
 			return s
 		end
 	end
@@ -272,7 +313,7 @@ function widget:UnitCommand(unitID, unitDefID, unitTeam, cmdID)
 		return
 	end
 	local def = UnitDefs[-cmdID]
-	for _, s in ipairs(steps) do
+	for _, s in ipairs(activeSteps()) do
 		if def and s.unit == def.name and not s.actual_start and not s.ordered and builderOf(s) == unitID then
 			s.ordered = unitID
 			return
@@ -299,7 +340,7 @@ local function pick(unitID, step)
 end
 
 local function placeNext()
-	if not plan then
+	if not plan and not live then
 		return true
 	end
 	for _, unitID in ipairs(Spring.GetSelectedUnits() or {}) do
@@ -309,7 +350,7 @@ local function placeNext()
 			return true
 		end
 	end
-	local s = steps[nextIndex()]
+	local s = firstOpenStep()
 	local unitID = s and builderOf(s)
 	if unitID then
 		pick(unitID, s)
@@ -319,7 +360,7 @@ end
 
 -- Auto-pick: the only selected unit is a planned builder with nothing to do.
 local function considerAutoPick(unitID)
-	if not autoPick or not plan or isFactory(unitID) then
+	if not autoPick or (not plan and not live) or isFactory(unitID) then
 		return
 	end
 	local selected = Spring.GetSelectedUnits() or {}
@@ -363,7 +404,7 @@ function widget:UnitIdle(unitID, unitDefID, unitTeam)
 	if unitTeam ~= myTeamID then
 		return
 	end
-	for _, s in ipairs(steps) do
+	for _, s in ipairs(activeSteps()) do
 		if s.ordered == unitID and not s.actual_start then
 			s.ordered = nil -- the order was dropped before the building went up
 		end
@@ -372,8 +413,8 @@ function widget:UnitIdle(unitID, unitDefID, unitTeam)
 end
 
 local function nextHint()
-	local s = steps[nextIndex()]
-	if not s or not s.builder_unit then
+	local s = firstOpenStep()
+	if not s or not (s.builder_unit or s.builder_id) then
 		return nil
 	end
 	local unitID = builderOf(s)
@@ -430,8 +471,78 @@ function widget:UnitDestroyed(unitID)
 	stepOfUnit[unitID] = nil
 end
 
+-- The game state for the companion: resources, wind, and every unit with its build progress,
+-- what each builder is building, or the build it was ordered to do and has not started.
+local function writeState()
+	stateSeq = stateSeq + 1
+	local units = {}
+	for _, unitID in ipairs(Spring.GetTeamUnits(myTeamID) or {}) do
+		local def = UnitDefs[Spring.GetUnitDefID(unitID) or -1]
+		if def then
+			local beingBuilt, progress = spGetUnitIsBeingBuilt(unitID)
+			local u = { id = unitID, name = def.name, done = not beingBuilt }
+			if beingBuilt then
+				u.progress = progress or 0
+			elseif def.isBuilder then
+				local target = Spring.GetUnitIsBuilding(unitID)
+				if target then
+					u.building = target
+				else
+					local cmdID = Spring.GetUnitCurrentCommand(unitID)
+					if cmdID and cmdID < 0 and UnitDefs[-cmdID] then
+						u.order = UnitDefs[-cmdID].name
+					end
+				end
+			end
+			units[#units + 1] = u
+		end
+	end
+	table.sort(units, function(a, b) return a.id < b.id end)
+	local m, ms, _, mi = spGetTeamResources(myTeamID, "metal")
+	local e, es, _, ei = spGetTeamResources(myTeamID, "energy")
+	local snapshot = {
+		format = "bar-build-guide-state", version = 1, seq = stateSeq, time = now(), commander = myCommander,
+		metal = { m or 0, ms or 0, mi or 0 }, energy = { e or 0, es or 0, ei or 0 },
+		wind = { now = select(4, Spring.GetWind()), min = Game and Game.windMin, max = Game and Game.windMax },
+		units = units,
+	}
+	local ok, encoded = pcall(Json.encode, snapshot)
+	if not ok then
+		return
+	end
+	local tmp = STATE_FILE .. ".tmp"
+	local file = io.open(tmp, "w")
+	if not file then
+		return
+	end
+	file:write(encoded)
+	file:close()
+	os.remove(STATE_FILE) -- renaming over a file fails on Windows
+	os.rename(tmp, STATE_FILE) -- the companion never reads a half-written file
+end
+
+local function readLive()
+	local file = io.open(LIVE_FILE, "r")
+	if not file then
+		live = nil
+		return
+	end
+	local content = file:read("*a")
+	file:close()
+	local ok, decoded = pcall(Json.decode, content)
+	local t = now()
+	if ok and type(decoded) == "table" and decoded.format == "bar-build-guide-live" and decoded.for_time
+		and t - decoded.for_time <= LIVE_STALE and decoded.for_time <= t + 1 then
+		if not live or live.for_seq ~= decoded.for_seq then
+			live = decoded -- a new plan; the same one keeps the steps already marked as ordered
+		end
+	else
+		live = nil -- no companion running, or a plan from another game
+	end
+end
+
 function widget:GameFrame(frame)
-	if not plan then
+	if Spring.GetSpectatingState() then
 		return
 	end
 	if not myCommander then
@@ -442,11 +553,23 @@ function widget:GameFrame(frame)
 		end
 	end
 	local t = now()
+	if Json and t - lastState >= STATE_EVERY then
+		lastState = t
+		writeState()
+	end
+	if Json and t - lastLive >= LIVE_EVERY then
+		lastLive = t
+		readLive()
+	end
+	if not plan then
+		return
+	end
 	if t - lastSample >= SAMPLE_EVERY then
 		lastSample = t
 		local m, _, _, mi = spGetTeamResources(myTeamID, "metal")
 		local e, _, _, ei = spGetTeamResources(myTeamID, "energy")
-		samples[#samples + 1] = { math.floor(t * 10 + 0.5) / 10, m or 0, e or 0, mi or 0, ei or 0 }
+		samples[#samples + 1] = { math.floor(t * 10 + 0.5) / 10, m or 0, e or 0, mi or 0, ei or 0,
+			select(4, Spring.GetWind()) or 0 }
 	end
 	if t - lastSave >= SAVE_EVERY then
 		writeLog()
@@ -498,7 +621,45 @@ function widget:DrawScreen()
 	local function add(s, r, g, b) lines[#lines + 1] = { s, r, g, b } end
 
 	local t = now()
-	if not plan then
+	if live then
+		local static = plan and plan.finish_time and ("   (plan file " .. clock(plan.finish_time) .. ")") or ""
+		if live.done then
+			add(string.format("Companion   %s   goal reached", clock(t)), 0.6, 1, 0.6)
+		else
+			add(string.format("Companion: %s   %s   ETA %s%s", live.goal or "goal", clock(t), clock(live.eta), static), 0.55, 0.85, 1)
+		end
+		local hint = nextHint()
+		if hint then
+			add(hint, 0.55, 0.85, 1)
+		end
+		local m = spGetTeamResources(myTeamID, "metal") or 0
+		local e = spGetTeamResources(myTeamID, "energy") or 0
+		add(string.format("Metal %d   Energy %d   wind %.1f (planning with %.1f)", math.floor(m), math.floor(e),
+			select(4, Spring.GetWind()) or 0, live.wind_used or 0), 0.8, 0.8, 0.8)
+		local shown, first = 0, true
+		for _, s in ipairs(live.steps or {}) do
+			if shown >= ROWS_AFTER + 1 then
+				break
+			end
+			shown = shown + 1
+			local who = s.builder or "?"
+			for _, h in ipairs(s.helpers or {}) do
+				who = who .. " + " .. h.builder
+			end
+			if not isBuild(s) then
+				add(string.format("    help %s  (%s)   at %s", s.display, who, clock(s.start)), 0.75, 0.75, 0.75)
+			elseif s.ordered then
+				add(string.format("..  %s  (%s)   ordered", s.display, who), 0.6, 0.6, 0.6)
+			else
+				local r, g, b = 0.75, 0.75, 0.75
+				if first then
+					r, g, b = 1, 1, 1
+					first = false
+				end
+				add(string.format("%s  %s  (%s)   at %s", r == 1 and "->" or "  ", s.display, who, clock(s.start)), r, g, b)
+			end
+		end
+	elseif not plan then
 		add(problem or "No plan loaded", 1, 0.6, 0.4)
 	else
 		local d = delay()

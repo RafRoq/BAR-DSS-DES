@@ -17,6 +17,7 @@ python app.py                                                               # we
 python optimize.py goals/coralab.yaml                                       # fastest T2 bot lab
 python optimize.py goals/armada_bot.yaml --compare recipes/armada_bot.yaml  # vs. a hand build
 python optimize.py --from-recipe recipes/cortex_air.yaml                    # same end state as a hand build
+python companion.py goals/coralab.yaml                                      # live re-planning while you play
 python -m pytest tests
 ```
 
@@ -96,6 +97,28 @@ never gives orders itself, so it also works in lobbies that turn off "unit contr
 
    This is how to check the model's assumptions, such as walking time and reclaim (see
    "Where the model differs from the real game").
+
+### Live companion
+
+`python companion.py [goal.yaml]` re-plans from the running game every couple of seconds. The plan follows
+what really happens (walking, wind, a different order) instead of predicting it.
+
+Widgets can't run programs or open network connections, so the widget and `companion.py` talk through two
+files in `LuaUI/Config/`:
+
+1. Every 2 s the widget writes `build_guide_state.json`: game time, metal and energy, wind, and every unit,
+   including each nanoframe's progress and what each builder is building or was ordered to build.
+2. `companion.py` sees the new file and rebuilds that moment in the simulator. The wind is the average seen
+   so far, blended with the goal's `wind_average` early on. It then plans to the goal (about 0.5 s) and
+   writes the next steps and the goal ETA to `build_guide_live.json`.
+3. The widget reads that file every second. While a fresh live plan exists, the panel shows it, with
+   "Companion" and the ETA in the title, and the place-next key follows it.
+
+Both sides write to a temporary file and rename it, so neither ever reads a half-written file.
+- **Steady plans:** the companion keeps its previous plan, replayed from the new moment, unless a fresh
+  search beats it by at least 1 s, so the steps shown don't jump around while you follow them.
+- **No companion running:** the widget falls back to the plan file.
+- **No plan file:** the companion works on its own.
 
 The widget matches steps by unit type and order: the nth unit of a kind you start is the plan's nth
 step of that kind. A build cancelled before it finishes reopens its step; units not in the plan are

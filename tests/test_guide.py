@@ -11,6 +11,7 @@ import pytest
 
 import app
 from bar_opt.goal import Goal
+from bar_opt.companion import plan_live
 from bar_opt.guide import plan_json
 from bar_opt.search import SearchConfig, optimize, replay_ops
 from bar_opt.serialize import run_json
@@ -97,6 +98,11 @@ class FakeBar:
         self.queue = {}  # unitID -> number of queued commands
         self.unit_def = {}  # unitID -> unitDefID
         self.commander = "corcom"
+        self.team_units = [1]
+        self.progress = {}  # unitID -> build progress of a nanoframe
+        self.building = {}  # builder unitID -> unitID it is building
+        self.orders = {}  # builder unitID -> first queued command id
+        self.wind = 12.0
         names = sorted({s["unit"] for s in plan["steps"]} | {"corcom", "armcom", "armmex", "corck", "corlab",
                                                               *extra_units})
         self.def_id = {u: i + 1 for i, u in enumerate(names)}
@@ -137,12 +143,15 @@ class FakeBar:
         spring.GetGameSeconds = lambda: self.frame / 30
         spring.GetGameFrame = lambda: self.frame
         spring.GetTeamResources = lambda team, kind: (500.0, 1000.0, 0.0, 5.0, 0.0)
-        spring.GetUnitIsBeingBuilt = lambda uid: (True, 0.5)
+        spring.GetUnitIsBeingBuilt = lambda uid: (True, self.progress[uid]) if uid in self.progress else (False, 1.0)
+        spring.GetUnitIsBuilding = lambda uid: self.building.get(uid)
+        spring.GetUnitCurrentCommand = lambda uid: self.orders.get(uid)
+        spring.GetWind = lambda: (0.0, 0.0, 0.0, self.wind, 0.0, 0.0, 0.0)
         spring.GetViewGeometry = lambda: (1920, 1080)
         spring.GetConfigFloat = lambda key, default: 1.0
         spring.GetMyTeamID = lambda: 0
         spring.GetSpectatingState = lambda: False
-        spring.GetTeamUnits = lambda team: self.to_lua([1])
+        spring.GetTeamUnits = lambda team: self.to_lua(list(self.team_units))
         spring.GetUnitDefID = lambda uid: self.def_id[self.commander] if uid == 1 else self.unit_def.get(uid)
         spring.GetSelectedUnits = lambda: self.to_lua(list(self.selected))
         spring.SelectUnitArray = lambda ids: self.select(self.from_lua(ids))
@@ -325,3 +334,43 @@ def test_place_next_picks_the_next_building_but_never_orders(run, tmp_path, monk
     assert bar.commands[-2:] == ["unbind sc_mouse4 buildguide_next", "bind Ctrl+sc_t buildguide_next"]
     assert bar.from_lua(bar.call("GetConfigData"))["key"] == "Ctrl+sc_t"
     assert any("Ctrl+T: select Bot Lab 1" in p for p in bar.draw())
+
+
+def test_companion_round_trip_through_the_files(run, tmp_path, monkeypatch):
+    bar = FakeBar(plan_json(run), tmp_path, monkeypatch, extra_units=["corwin"])
+    def_id = bar.def_id
+    # The commander is building a wind turbine (unit 50, 40% done).
+    bar.team_units = [1, 50]
+    bar.unit_def[50] = def_id["corwin"]
+    bar.progress[50] = 0.4
+    bar.building[1] = 50
+    bar.call("Initialize")
+    bar.frame = 61
+    bar.call("GameFrame", 61)
+
+    state_file = bar.config / "build_guide_state.json"
+    snapshot = json.loads(state_file.read_text())
+    assert snapshot["format"] == "bar-build-guide-state" and snapshot["commander"] == "corcom"
+    assert snapshot["wind"]["now"] == 12.0 and snapshot["time"] == pytest.approx(61 / 30)
+    units = {u["id"]: u for u in snapshot["units"]}
+    assert units[1] == {"id": 1, "name": "corcom", "done": True, "building": 50}
+    assert units[50]["done"] is False and units[50]["progress"] == pytest.approx(0.4)
+    assert not (bar.config / "build_guide_state.json.tmp").exists()
+
+    # The companion answers through the live file; the panel and place-next follow it.
+    live, _ = plan_live(GOAL, snapshot)
+    (bar.config / "build_guide_live.json").write_text(json.dumps(live))
+    bar.frame = 95
+    bar.call("GameFrame", 95)
+    printed = bar.draw()
+    assert any(p.startswith("Companion: lab and con") for p in printed)
+    first = next(s for s in live["steps"] if s["action"] == "build")
+    assert first["builder_id"] == 1  # the commander, by its game unit id
+    bar.actions["buildguide_next"]("buildguide_next")
+    bar.call("Update")
+    assert bar.selected == [1] and bar.picked == [def_id[first["unit"]]]
+
+    # A stale plan (another game, or the companion stopped) is ignored.
+    bar.frame = 95 + 30 * 30
+    bar.call("GameFrame", bar.frame)
+    assert not any(p.startswith("Companion") for p in bar.draw())

@@ -70,12 +70,13 @@ def test_improve_stops_when_cancelled():
     assert improved.evaluation["cost"] <= result.evaluation["cost"]
 
 
-def test_remaining_steps_drop_started_builds_and_their_assists():
+def test_remaining_steps_drop_started_builds_and_keep_their_helpers():
     steps = [Step("cormex", ("corcom", 0)), Step("corlab", ("corcom", 0)), Step(None, ("corck", 0), target=1),
              Step("cormex", ("corcom", 0)), Step(None, ("corck", 0), target=3)]
     left = remaining_steps(steps, {"cormex": 1, "corlab": 1})
-    assert [x.unit for x in left] == ["cormex", None]
-    assert left[1].target == 0  # still aimed at the second mex, now first
+    assert [x.unit for x in left] == [None, "cormex", None]
+    assert left[0].assist_unit == "corlab"  # the lab is under way: help the running one
+    assert left[2].target == 1  # still aimed at the second mex, now the first build step
 
 
 def test_decoder_continues_from_a_mid_build_state():

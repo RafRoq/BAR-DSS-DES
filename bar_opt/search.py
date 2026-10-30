@@ -423,7 +423,11 @@ class Planner:
 
 def replay_ops(goal: Goal, ops: list[tuple], record: bool = True) -> State:
     """Re-run a search result on a fresh (recorded) state."""
-    state = State(goal.config, record=record)
+    return apply_ops(State(goal.config, record=record), ops)
+
+
+def apply_ops(state: State, ops: list[tuple]) -> State:
+    """Apply a search result's operations to `state`, which the search started from."""
     for op in ops:
         if op[0] == "start":
             state.start(op[1], op[2])

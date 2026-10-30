@@ -7,9 +7,9 @@ weights:
   stall: 0.0333           # per lost build-power-second (commander fully stalled 1 s = 10 s)
   overflow_metal: 0.2     # per metal lost to full storage
   overflow_energy: 0.01   # per energy lost to full storage
-  idle: 0.0067            # per idle build-power-second (idle commander 1 s = 2 s)
+  idle: 0.0067            # per wasted build-power-second (idle commander 1 s = 2 s)
 config:
   wind_average: 14.2
   metal_per_spot: 2.3
-  mex_spots: 6
+  mex_spots: 4
   converter_level: 0.75

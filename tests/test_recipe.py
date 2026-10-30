@@ -7,6 +7,7 @@ import pytest
 
 import main
 from bar_opt.recipe import load_yaml_recipe, replay, save_yaml, to_yaml_steps
+from conftest import no_walk
 
 BASELINE_FILE = os.path.join(os.path.dirname(__file__), "baseline_armada_bot.json")
 # Units whose stats changed between the old API data and bar_units.json
@@ -16,7 +17,7 @@ CHANGED = {"corap", "corca"}
 def test_armada_bot_matches_old_simulator_where_data_is_unchanged():
     with open(BASELINE_FILE) as f:
         baseline = json.load(f)
-    state, problems = replay(main.ARMADA_BOT)
+    state, problems = replay(main.ARMADA_BOT, no_walk())  # the old simulator had no walking
     assert problems == []
     jobs = sorted(state.recorder.jobs.values(), key=lambda j: j["start"])
     assert [j["unit"] for j in jobs] == [t["name"] for t in baseline["tasks"]]

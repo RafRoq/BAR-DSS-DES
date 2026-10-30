@@ -76,10 +76,13 @@ only displays; it never gives orders.
      back. `/luaui buildguide_reload` reloads the plan; `/luaui buildguide_toggle` hides it.
 3. **Compare.** The widget logs every game to `LuaUI/Config/build_guide_log_<date>.json`: when each step
    really started and finished, plus your resources every 5 s. The **In-game** tab lists these logs.
-   Open one to see:
-   - the delay per step;
-   - plan against game for metal, energy and income;
-   - a step-by-step table.
+   Open one to see what you control apart from what you don't:
+   - **When the goal was reached**, against the plan.
+   - **Build times against the plan.** Do the buildings go up as fast as planned? If so, the economy
+     plan held.
+   - **Waiting before steps:** each time you fell further behind than ever before a step started, usually
+     from walking or giving orders. Steps built in another order aren't counted twice.
+   - Plan against game for metal, energy and income, and a step-by-step table.
 
    This is how to check the model's assumptions, such as walking time and reclaim (see
    "Where the model differs from the real game").
@@ -114,7 +117,7 @@ weights:            # cost = finish_time + stall*lost BP-s + overflow_metal*meta
   idle: 0.0067
 config:             # map and game assumptions, see "Assumptions"
   wind_average: 14.2
-  mex_spots: 6
+  mex_spots: 4
 search:             # optional
   beam_width: 150
   improve_seconds: 30 # time spent polishing the best build after the beam searches
@@ -196,14 +199,24 @@ Everything is measured until the goal is reached.
 
 ### Assumptions (`config:`)
 
-Defaults: `wind_average 14.2`, `tidal_strength 21`, `metal_per_spot 2.3` (T1 extractor income), `mex_spots 6`,
-`converter_level 0.75`, `start_metal/energy 1000`, `start_*_storage 1000`, `commander corcom`.
+Defaults:
+- **Map:** `wind_average 14.2`, `tidal_strength 21`, `metal_per_spot 2.3` (T1 extractor income),
+  `mex_spots 4`. Usually 3–4 spots are close together; the rest are far, so they aren't counted by default.
+- **Rules:** `converter_level 0.75`, `start_metal/energy 1000`, `start_*_storage 1000`, `commander corcom`.
+- **Walking:** off (`walk_base`, `walk_mex_near`, `walk_mex_far` all 0, plus `mex_near 4`). When set, a
+  commander or constructor walks that many seconds before it starts or assists a job, and adds no build
+  power until it arrives. The near/far time applies to the first `mex_near` spots and to the rest.
 
 ### Where the model differs from the real game
 
 These are worth checking in-game or in a replay:
 
-1. **No travel time.** The commander walking between extractors and builders walking to sites are ignored. Real early builds are slower, mostly in the first 2 minutes.
+1. **No travel time by default.** Walking depends on the map, the start position and your role, so the
+   optimizer plans the economy and the in-game guide measures the rest.
+   - In the first test game (Supreme Isthmus) every building took exactly its planned build time. The goal
+     was still 96 s late, because of waits before steps: about 1 s between base buildings, 10–24 s to reach
+     the 3rd–5th mex, and 58 s to the 6th.
+   - The `walk_*` settings can model a specific map if you want plans that include walking.
 2. **No reclaim.** Trees, rocks and wrecks are ignored. On many maps they're significant early metal.
 3. **How resources are split during a stall.** As far as I know, the engine takes resources builder by builder each frame, in unit order. Here they're split proportionally across jobs. Total spending equals income either way, but which job finishes first can differ. BAR's Builder Priority setting (low-priority builders only use leftovers) isn't modelled. *Check:* stall a factory and a constructor together and see whether both slow down or one stops.
 4. **Income timing.** Income arrives continuously here; in BAR it's credited periodically (converters run every 15 frames). This affects timings by under a second.

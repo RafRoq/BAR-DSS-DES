@@ -13,3 +13,10 @@ os.chdir(LEGACY)
 sys.path.insert(0, ROOT)
 sys.path.insert(1, LEGACY)
 logging.getLogger().addHandler(logging.NullHandler())
+
+
+def no_walk(**values):
+    """Config without walking, for tests of the economy itself."""
+    from bar_opt.config import EconConfig
+
+    return EconConfig(walk_base=0.0, walk_mex_near=0.0, walk_mex_far=0.0, **values)

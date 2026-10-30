@@ -243,7 +243,7 @@ class Planner:
         owed_m = owed_e = 0.0  # what running jobs still spend within `duration`
         for job in state.jobs.values():
             j = self.units[job.unit]
-            rate = job.bp / j.build_time
+            rate = job.planned_bp() / j.build_time
             load_m += rate * j.metal
             load_e += rate * j.energy
             if conservative:
@@ -300,7 +300,7 @@ class Planner:
         if bdef.can_assist:
             for job in state.jobs.values():
                 u = self.units[job.unit]
-                remaining = (u.build_time - job.progress) / (job.bp + bdef.build_power)
+                remaining = (u.build_time - job.progress) / (job.planned_bp() + bdef.build_power)
                 if remaining <= 1.0:
                     continue
                 if self._delay_until_affordable(state, bdef.build_power, job.unit, remaining) == 0:

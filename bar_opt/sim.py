@@ -13,6 +13,8 @@ Model (see README for the deviations from the real game):
 - Converters use energy above converter_level * storage, up to their capacity, most
   efficient first (game_energy_conversion.lua); at the level they convert the surplus.
 - Income above a full storage is lost and counted as overflow.
+- Commanders and constructors walk to a job before they add build power (config walk_*);
+  the k-th metal spot used, and the k-th extractor upgraded, is close or far by k.
 """
 
 import math
@@ -20,7 +22,7 @@ from dataclasses import dataclass, replace
 from typing import NamedTuple
 
 from .config import EconConfig
-from .data import UnitDef, load_units
+from .data import MOBILE, UnitDef, load_units
 
 INF = math.inf
 EPS = 1e-6  # absolute tolerance for resources, which are O(1000)
@@ -50,23 +52,29 @@ class Metrics:
 
 
 class Job:
-    __slots__ = ("id", "unit", "progress", "builders", "bp", "start_time", "upgrades")
+    __slots__ = ("id", "unit", "progress", "builders", "bp", "start_time", "upgrades", "walking")
 
     def __init__(self, job_id, unit, builder, bp, start_time, upgrades):
         self.id = job_id
         self.unit = unit
         self.progress = 0.0
         self.builders = [builder]  # first entry started the job
-        self.bp = bp
+        self.bp = bp  # build power of the builders that have arrived
         self.start_time = start_time
         self.upgrades = upgrades  # name of the extractor this one replaces, or None
+        self.walking: list[tuple[float, int, float]] = []  # (arrival time, builder, build power)
 
     def copy(self) -> "Job":
         job = Job.__new__(Job)
         job.id, job.unit, job.progress = self.id, self.unit, self.progress
         job.builders, job.bp = list(self.builders), self.bp
         job.start_time, job.upgrades = self.start_time, self.upgrades
+        job.walking = list(self.walking)
         return job
+
+    def planned_bp(self) -> float:
+        """Build power once every builder sent to the job has arrived."""
+        return self.bp + sum(bp for _, _, bp in self.walking)
 
 
 class Segment(NamedTuple):
@@ -98,7 +106,8 @@ class Recorder:
 
     def __init__(self):
         self.segments: list[Segment] = []
-        # job id -> {"unit", "start", "end", "joins": [(time, builder id)]}
+        # job id -> {"unit", "start", "end", "joins": [(time, builder id)],
+        #            "arrivals": [(time, builder id)]}  (joins are orders; arrivals end the walk)
         self.jobs: dict[int, dict] = {}
         self.builder_units: dict[int, str] = {}
         self.builder_spawn: dict[int, float] = {}
@@ -110,7 +119,8 @@ class State:
         "config", "units", "time", "metal", "energy", "max_metal", "max_energy",
         "metal_make", "mex_metal", "energy_make", "energy_upkeep", "converters",
         "conv_capacity", "counts", "builder_unit", "builder_job", "idle_bp", "total_bp", "idle_helper_bp",
-        "jobs", "next_job_id", "spots_used", "free_mexes", "metrics", "recorder", "_last_dt",
+        "jobs", "next_job_id", "spots_used", "upgrades_started", "walking_bp", "free_mexes", "metrics", "recorder",
+        "_last_dt",
     )
 
     def __init__(self, config: EconConfig | None = None, units: dict[str, UnitDef] | None = None,
@@ -140,6 +150,8 @@ class State:
         self.jobs: dict[int, Job] = {}
         self.next_job_id = 0
         self.spots_used = 0
+        self.upgrades_started = 0
+        self.walking_bp = 0.0  # build power of builders walking to a job
         self.free_mexes: dict[str, int] = {}  # finished extractors not being upgraded
         self.metrics = Metrics()
         self.recorder = Recorder() if record else None
@@ -161,6 +173,7 @@ class State:
         new.jobs = {k: j.copy() for k, j in self.jobs.items()}
         new.next_job_id = self.next_job_id
         new.spots_used = self.spots_used
+        new.upgrades_started, new.walking_bp = self.upgrades_started, self.walking_bp
         new.free_mexes = dict(self.free_mexes)
         new.metrics = replace(self.metrics)
         new.recorder = None
@@ -210,21 +223,26 @@ class State:
         if reason:
             raise SimError(f"t={self.time:.2f}: cannot start {unit} with builder {builder}: {reason}")
         upgrades = None
+        walk = self.config.walk_base
         if self.units[unit].is_mex:
             if self.spots_used < self.config.mex_spots:
+                walk = self._spot_walk(self.spots_used)
                 self.spots_used += 1
             else:
                 upgrades = self._upgradable(self.units[unit])
                 self.free_mexes[upgrades] -= 1
+                walk = self._spot_walk(self.upgrades_started)
+                self.upgrades_started += 1
         bp = self._builder_bp(builder)
-        job = Job(self.next_job_id, unit, builder, bp, self.time, upgrades)
+        job = Job(self.next_job_id, unit, builder, 0.0, self.time, upgrades)
         self.next_job_id += 1
         self.jobs[job.id] = job
         self.builder_job[builder] = job.id
         self._set_busy(builder, bp)
         if self.recorder:
             self.recorder.jobs[job.id] = {"unit": unit, "start": self.time, "end": None,
-                                          "joins": [(self.time, builder)]}
+                                          "joins": [(self.time, builder)], "arrivals": []}
+        self._join(job, builder, bp, walk)
         return job.id
 
     def assist(self, builder: int, job_id: int) -> None:
@@ -234,11 +252,11 @@ class State:
         job = self.jobs[job_id]
         bp = self._builder_bp(builder)
         job.builders.append(builder)
-        job.bp += bp
         self.builder_job[builder] = job_id
         self._set_busy(builder, bp)
         if self.recorder:
             self.recorder.jobs[job_id]["joins"].append((self.time, builder))
+        self._join(job, builder, bp, self.config.walk_base)
 
     def advance(self, until: float = INF) -> list[int]:
         """Run until at least one job finishes or `until` is reached.
@@ -262,6 +280,22 @@ class State:
 
     def _builder_bp(self, builder: int) -> float:
         return self.units[self.builder_unit[builder]].build_power
+
+    def _spot_walk(self, k: int) -> float:
+        return self.config.walk_mex_near if k < self.config.mex_near else self.config.walk_mex_far
+
+    def _join(self, job: Job, builder: int, bp: float, walk: float) -> None:
+        """Add a builder's build power to a job, after it walks there if it is mobile."""
+        if self.units[self.builder_unit[builder]].kind != MOBILE or walk <= 0:
+            self._arrive(job, builder, bp)
+            return
+        job.walking.append((self.time + walk, builder, bp))
+        self.walking_bp += bp
+
+    def _arrive(self, job: Job, builder: int, bp: float) -> None:
+        job.bp += bp
+        if self.recorder:
+            self.recorder.jobs[job.id]["arrivals"].append((self.time, builder))
 
     def _set_busy(self, builder: int, bp: float) -> None:
         self.idle_bp -= bp
@@ -411,6 +445,8 @@ class State:
             rate = s * job.bp
             if rate > 0:
                 dt = min(dt, (self.units[job.unit].build_time - job.progress) / rate)
+            for arrival, _, _ in job.walking:
+                dt = min(dt, arrival - self.time)
         if d_metal < 0:
             dt = min(dt, self.metal / -d_metal)
         elif d_metal > 0:
@@ -432,7 +468,7 @@ class State:
         self.time += dt
 
         m = self.metrics
-        active_bp = self.total_bp - self.idle_bp
+        active_bp = self.total_bp - self.idle_bp - self.walking_bp
         if s < 1.0 and self.jobs:
             m.stall_bp_seconds += (1.0 - s) * active_bp * dt
             m.stall_seconds += dt
@@ -465,6 +501,12 @@ class State:
         finished = []
         for job in self.jobs.values():
             job.progress += s * job.bp * dt
+            if job.walking:
+                arrived = [w for w in job.walking if w[0] <= self.time + 1e-9]
+                job.walking = [w for w in job.walking if w[0] > self.time + 1e-9]
+                for _, builder, bp in arrived:
+                    self.walking_bp -= bp
+                    self._arrive(job, builder, bp)
             build_time = self.units[job.unit].build_time
             if job.progress >= build_time * (1.0 - 1e-9):
                 job.progress = build_time
@@ -489,7 +531,9 @@ class State:
             self.builder_job[b] = -1
             if self.units[self.builder_unit[b]].can_assist:
                 self.idle_helper_bp += self._builder_bp(b)
-        self.idle_bp += job.bp
+        still_walking = sum(bp for _, _, bp in job.walking)  # the job finished before they arrived
+        self.walking_bp -= still_walking
+        self.idle_bp += job.bp + still_walking
         if self.recorder:
             self.recorder.jobs[job_id]["end"] = self.time
         self._add_unit(job.unit, +1)

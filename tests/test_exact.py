@@ -4,6 +4,7 @@ from bar_opt.exact import BranchAndBound, _time_to_do
 from bar_opt.goal import Goal
 from bar_opt.search import SearchConfig, optimize
 from bar_opt.sim import State
+from conftest import no_walk
 
 ARMADA = {"cormex": 3, "corwin": 7, "corap": 1, "corca": 1}
 
@@ -29,7 +30,7 @@ def test_lower_bound_never_exceeds_the_cost_of_a_real_build():
 
 
 def test_small_goal_is_proven_optimal():
-    goal = Goal(name="g", targets={"cormex": 2, "corwin": 2}, max_time=600)
+    goal = Goal(name="g", targets={"cormex": 2, "corwin": 2}, max_time=600, config=no_walk())
     result = BranchAndBound(goal).solve(time_limit=30)
     assert result.proven
     assert result.lower_bound == pytest.approx(result.result.evaluation["cost"])

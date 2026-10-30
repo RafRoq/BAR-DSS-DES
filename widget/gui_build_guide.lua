@@ -1,7 +1,13 @@
 local widget = widget ---@type Widget
 
 -- Build Order Guide: shows the next steps of a build order planned by the BAR build order
--- optimizer, and how far ahead or behind plan you are. Display only: it never gives orders.
+-- optimizer, and how far ahead or behind plan you are.
+--
+-- Place next (Alt+J): selects the builder of the next step and picks its building in the build
+-- menu, so your next click places it (hold Shift to queue it behind current work). With a
+-- planned builder selected and idle, its next building is picked by itself (auto-pick, toggle
+-- with /luaui buildguide_autopick). Factory steps only select the factory: you click the unit.
+-- The widget never gives orders itself, so it also works where unit control widgets are off.
 --
 -- Install: copy this file to <BAR data folder>/LuaUI/Widgets/ and the plan exported by the
 -- optimizer to <BAR data folder>/LuaUI/Config/build_guide_plan.json, then enable
@@ -12,7 +18,7 @@ local widget = widget ---@type Widget
 --
 -- The panel starts at the top right, under the top bar; drag it by its title. Commands:
 -- /luaui buildguide_reload (re-read the plan), /luaui buildguide_toggle (hide or show),
--- /luaui buildguide_reset (back to the default position).
+-- /luaui buildguide_reset (back to the default position), /luaui buildguide_next (= Alt+J).
 
 function widget:GetInfo()
 	return {
@@ -33,6 +39,7 @@ local SAMPLE_EVERY = 5 -- seconds between resource samples
 local SAVE_EVERY = 30 -- seconds between log writes (also written on every finished step)
 local ROWS_BEFORE, ROWS_AFTER = 2, 6 -- steps shown around the next one
 local ON_PLAN = 2 -- seconds of difference still shown as "on plan"
+local NEXT_KEY, NEXT_KEY_LABEL = "Alt+sc_j", "Alt+J" -- free in BAR's default keybindings
 
 local spGetGameSeconds = Spring.GetGameSeconds
 local spGetGameFrame = Spring.GetGameFrame
@@ -49,6 +56,10 @@ local myTeamID = Spring.GetMyTeamID()
 -- Commander -> faction, to tell the player when the plan is for another faction.
 local FACTIONS = { armcom = "Armada", corcom = "Cortex", legcom = "Legion" }
 local myCommander -- unit name of our commander, found on the first game frame
+local myBuilders = {} -- unit name -> unitIDs in the order they were finished (plan builder_n)
+local autoPick = true
+local pendingPick -- build command to activate once the selection's build menu is ready
+local checkSelection -- selected unit to consider for auto-pick on the next update
 local hidden = false
 local lastSample, lastSave = -SAMPLE_EVERY, 0
 
@@ -85,7 +96,7 @@ end
 
 local function loadPlan()
 	plan, problem, steps, stepOfUnit, extra, samples, logFile = nil, nil, {}, {}, {}, {}, nil
-	myCommander = nil
+	myCommander, myBuilders = nil, {}
 	if not Json then
 		problem = "Json library not available"
 		return
@@ -228,9 +239,144 @@ local function findCommander()
 	for _, unitID in ipairs(Spring.GetTeamUnits(myTeamID) or {}) do
 		local def = UnitDefs[Spring.GetUnitDefID(unitID)]
 		if def and FACTIONS[def.name] then
-			return def.name
+			return def.name, unitID
 		end
 	end
+end
+
+-- ------------------------------------------------------------------ place next
+
+local function builderOf(step)
+	local list = step.builder_unit and myBuilders[step.builder_unit]
+	return list and list[step.builder_n or 1]
+end
+
+local function nextStepOf(unitID)
+	for _, s in ipairs(steps) do
+		if not s.actual_start and not s.ordered and builderOf(s) == unitID then
+			return s
+		end
+	end
+end
+
+-- A build order the player gave: its step is taken until the builder starts it or goes idle.
+function widget:UnitCommand(unitID, unitDefID, unitTeam, cmdID)
+	if unitTeam ~= myTeamID or not cmdID or cmdID >= 0 then
+		return
+	end
+	local def = UnitDefs[-cmdID]
+	for _, s in ipairs(steps) do
+		if def and s.unit == def.name and not s.actual_start and not s.ordered and builderOf(s) == unitID then
+			s.ordered = unitID
+			return
+		end
+	end
+end
+
+local function isFactory(unitID)
+	local def = UnitDefs[Spring.GetUnitDefID(unitID) or -1]
+	return def and def.isFactory
+end
+
+-- Select the step's builder and pick its building in the build menu; the player's click places
+-- it. The build menu follows the selection, so the command is activated on a later update.
+local function pick(unitID, step)
+	local selected = Spring.GetSelectedUnits() or {}
+	if not (#selected == 1 and selected[1] == unitID) then
+		Spring.SelectUnitArray({ unitID })
+	end
+	local def = UnitDefNames[step.unit]
+	if def and not isFactory(unitID) then -- a factory's build button queues at once: leave it to the player
+		pendingPick = { unitDefID = def.id, tries = 30 }
+	end
+end
+
+local function placeNext()
+	if not plan then
+		return true
+	end
+	for _, unitID in ipairs(Spring.GetSelectedUnits() or {}) do
+		local s = nextStepOf(unitID)
+		if s then
+			pick(unitID, s)
+			return true
+		end
+	end
+	local s = steps[nextIndex()]
+	local unitID = s and builderOf(s)
+	if unitID then
+		pick(unitID, s)
+	end
+	return true
+end
+
+-- Auto-pick: the only selected unit is a planned builder with nothing to do.
+local function considerAutoPick(unitID)
+	if not autoPick or not plan or isFactory(unitID) then
+		return
+	end
+	local selected = Spring.GetSelectedUnits() or {}
+	if #selected ~= 1 or selected[1] ~= unitID or (Spring.GetUnitCommandCount(unitID) or 0) > 0 then
+		return
+	end
+	if select(2, Spring.GetActiveCommand()) then
+		return -- the player already chose a command
+	end
+	local s = nextStepOf(unitID)
+	if s then
+		pick(unitID, s)
+	end
+end
+
+function widget:Update()
+	if checkSelection then
+		local unitID = checkSelection
+		checkSelection = nil
+		considerAutoPick(unitID)
+	end
+	if pendingPick then
+		local index = Spring.GetCmdDescIndex(-pendingPick.unitDefID)
+		if index then
+			Spring.SetActiveCommand(index)
+			pendingPick = nil
+		else
+			pendingPick.tries = pendingPick.tries - 1
+			if pendingPick.tries <= 0 then
+				pendingPick = nil
+			end
+		end
+	end
+end
+
+function widget:SelectionChanged(selected)
+	checkSelection = selected and #selected == 1 and selected[1] or nil
+end
+
+function widget:UnitIdle(unitID, unitDefID, unitTeam)
+	if unitTeam ~= myTeamID then
+		return
+	end
+	for _, s in ipairs(steps) do
+		if s.ordered == unitID and not s.actual_start then
+			s.ordered = nil -- the order was dropped before the building went up
+		end
+	end
+	considerAutoPick(unitID)
+end
+
+local function nextHint()
+	local s = steps[nextIndex()]
+	if not s or not s.builder_unit then
+		return nil
+	end
+	local unitID = builderOf(s)
+	if not unitID then
+		return string.format("Next: %s by %s (not built yet)", s.display, s.builder)
+	end
+	if isFactory(unitID) then
+		return string.format("%s: select %s, then queue %s", NEXT_KEY_LABEL, s.builder, s.display)
+	end
+	return string.format("%s: place %s with %s%s", NEXT_KEY_LABEL, s.display, s.builder, autoPick and "  (auto-pick on)" or "")
 end
 
 local function wrongFaction()
@@ -256,6 +402,11 @@ function widget:UnitCreated(unitID, unitDefID, unitTeam, builderID)
 end
 
 function widget:UnitFinished(unitID, unitDefID, unitTeam)
+	local def = UnitDefs[unitDefID]
+	if unitTeam == myTeamID and def and def.isBuilder then
+		myBuilders[def.name] = myBuilders[def.name] or {}
+		table.insert(myBuilders[def.name], unitID)
+	end
 	local s = stepOfUnit[unitID]
 	if s and not s.actual_finish then
 		s.actual_finish = now()
@@ -276,7 +427,13 @@ function widget:GameFrame(frame)
 	if not plan then
 		return
 	end
-	myCommander = myCommander or findCommander()
+	if not myCommander then
+		local unitID
+		myCommander, unitID = findCommander()
+		if unitID then
+			myBuilders[myCommander] = { unitID }
+		end
+	end
 	local t = now()
 	if t - lastSample >= SAMPLE_EVERY then
 		lastSample = t
@@ -345,6 +502,10 @@ function widget:DrawScreen()
 		local mismatch = wrongFaction()
 		if mismatch then
 			add(mismatch .. ": your units will not match its steps.", 1, 0.45, 0.4)
+		end
+		local hint = nextHint()
+		if hint then
+			add(hint, 0.55, 0.85, 1)
 		end
 		local pr = planResources(t)
 		if pr then
@@ -454,7 +615,7 @@ end
 -- ------------------------------------------------------------------ setup
 
 function widget:GetConfigData()
-	return { version = CONFIG_VERSION, x = pos and pos.x, y = pos and pos.y, hidden = hidden }
+	return { version = CONFIG_VERSION, x = pos and pos.x, y = pos and pos.y, hidden = hidden, autopick = autoPick }
 end
 
 function widget:SetConfigData(data)
@@ -462,6 +623,7 @@ function widget:SetConfigData(data)
 		pos = { x = data.x, y = data.y }
 	end
 	hidden = data.hidden == true
+	autoPick = data.autopick ~= false
 end
 
 function widget:Initialize()
@@ -480,6 +642,13 @@ function widget:Initialize()
 		pos, hidden = nil, false
 		return true
 	end, nil, "t")
+	widgetHandler:AddAction("buildguide_next", placeNext, nil, "tp")
+	widgetHandler:AddAction("buildguide_autopick", function()
+		autoPick = not autoPick
+		Spring.Echo("Build Order Guide: auto-pick " .. (autoPick and "on" or "off"))
+		return true
+	end, nil, "t")
+	Spring.SendCommands("bind " .. NEXT_KEY .. " buildguide_next")
 end
 
 function widget:Shutdown()
@@ -487,4 +656,7 @@ function widget:Shutdown()
 	widgetHandler:RemoveAction("buildguide_reload")
 	widgetHandler:RemoveAction("buildguide_toggle")
 	widgetHandler:RemoveAction("buildguide_reset")
+	widgetHandler:RemoveAction("buildguide_next")
+	widgetHandler:RemoveAction("buildguide_autopick")
+	Spring.SendCommands("unbind " .. NEXT_KEY .. " buildguide_next")
 end

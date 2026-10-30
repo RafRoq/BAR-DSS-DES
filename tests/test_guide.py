@@ -36,7 +36,9 @@ def test_plan_has_one_step_per_job_in_start_order(run):
     cons = [s for s in plan["steps"] if s["unit"] == "corck"]
     assert [s["occurrence"] for s in cons] == [1, 2]
     assert all(s["builder"] == "Bot Lab 1" for s in cons)
+    assert all((s["builder_unit"], s["builder_n"]) == ("corlab", 1) for s in cons)
     assert plan["steps"][0]["builder"] == "Commander"
+    assert (plan["steps"][0]["builder_unit"], plan["steps"][0]["builder_n"]) == ("corcom", 1)
     json.dumps(plan, allow_nan=False)
 
 
@@ -74,131 +76,168 @@ def test_app_serves_the_widget_file():
 
 # ---------------------------------------------------------------- the widget under Lua 5.1
 
-def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
-    lua51 = pytest.importorskip("lupa.lua51")
-    plan = plan_json(run)
-    config = tmp_path / "LuaUI" / "Config"
-    config.mkdir(parents=True)
-    (config / "build_guide_plan.json").write_text(json.dumps(plan))
-    monkeypatch.chdir(tmp_path)
+class FakeBar:
+    """The widget loaded under Lua 5.1 with a mock of the parts of the BAR widget API it uses."""
 
-    lua = lua51.LuaRuntime(unpack_returned_tuples=True)
+    def __init__(self, plan, tmp_path, monkeypatch, extra_units=()):
+        lua51 = pytest.importorskip("lupa.lua51")
+        self.config = tmp_path / "LuaUI" / "Config"
+        self.config.mkdir(parents=True)
+        (self.config / "build_guide_plan.json").write_text(json.dumps(plan))
+        monkeypatch.chdir(tmp_path)
 
-    def to_lua(o):
+        lua = self.lua = lua51.LuaRuntime(unpack_returned_tuples=True)
+        self.lua51 = lua51
+        self.frame = 0
+        self.printed = []
+        self.actions = {}
+        self.commands = []  # SendCommands
+        self.selected = []
+        self.picked = []  # SetActiveCommand calls
+        self.queue = {}  # unitID -> number of queued commands
+        self.unit_def = {}  # unitID -> unitDefID
+        self.commander = "corcom"
+        names = sorted({s["unit"] for s in plan["steps"]} | {"corcom", "armcom", "armmex", "corck", "corlab",
+                                                              *extra_units})
+        self.def_id = {u: i + 1 for i, u in enumerate(names)}
+        builders = {"corcom", "armcom", "corck", "corlab"}
+        unit_defs = {i: {"name": u, "id": i, "isBuilder": u in builders, "isFactory": u == "corlab"}
+                     for u, i in self.def_id.items()}
+
+        g = lua.globals()
+        lua.execute("""
+            function _mock(print_fn, add_action)
+              local font = {}
+              function font:Begin() end
+              function font:End() end
+              function font:SetTextColor() end
+              function font:Print(s) print_fn(s) end
+              function font:GetTextWidth(s) return #s * 0.5 end
+              local handler = {}
+              function handler:AddAction(name, fn) add_action(name, fn) end
+              function handler:RemoveAction() end
+              return font, handler
+            end
+        """)
+        font, handler = g._mock(self.printed.append, self.actions.__setitem__)
+        g.widgetHandler = handler
+        g.Json = self.to_lua({})
+        g.Json.decode = lambda s: self.to_lua(json.loads(s))
+        g.Json.encode = lambda t: json.dumps(self.from_lua(t))
+        g.UnitDefs = self.to_lua(unit_defs)
+        g.UnitDefNames = self.to_lua({d["name"]: d for d in unit_defs.values()})
+        g.Game = self.to_lua({"mapName": "Test Map"})
+        g.WG = self.to_lua({"fonts": {}})
+        g.WG.fonts.getFont = lambda *a: font
+        g.VFS = self.to_lua({})
+        g.VFS.LoadFile = lambda p: open(p).read() if os.path.exists(p) else None
+        g.gl = self.to_lua({})
+        g.gl.Color = g.gl.Rect = lambda *a: None
+        spring = self.to_lua({})
+        spring.GetGameSeconds = lambda: self.frame / 30
+        spring.GetGameFrame = lambda: self.frame
+        spring.GetTeamResources = lambda team, kind: (500.0, 1000.0, 0.0, 5.0, 0.0)
+        spring.GetUnitIsBeingBuilt = lambda uid: (True, 0.5)
+        spring.GetViewGeometry = lambda: (1920, 1080)
+        spring.GetConfigFloat = lambda key, default: 1.0
+        spring.GetMyTeamID = lambda: 0
+        spring.GetSpectatingState = lambda: False
+        spring.GetTeamUnits = lambda team: self.to_lua([1])
+        spring.GetUnitDefID = lambda uid: self.def_id[self.commander] if uid == 1 else self.unit_def.get(uid)
+        spring.GetSelectedUnits = lambda: self.to_lua(list(self.selected))
+        spring.SelectUnitArray = lambda ids: self.select(self.from_lua(ids))
+        # the build menu shows the selected builder's options; command index = -cmdID here
+        spring.GetCmdDescIndex = lambda cmd: -cmd if self.selected else None
+        spring.SetActiveCommand = lambda index: self.picked.append(index) or True
+        spring.GetActiveCommand = lambda: None
+        spring.GetUnitCommandCount = lambda uid: self.queue.get(uid, 0)
+        spring.SendCommands = lambda c: self.commands.append(c)
+        spring.Echo = lambda s: None
+        g.Spring = spring
+        g.widget = self.to_lua({})
+        with open(WIDGET, encoding="utf-8") as f:
+            lua.execute(f.read())
+        self.w = g.widget
+
+    def to_lua(self, o):
         if isinstance(o, dict):
-            return lua.table_from({k: to_lua(v) for k, v in o.items()})
+            return self.lua.table_from({k: self.to_lua(v) for k, v in o.items()})
         if isinstance(o, list):
-            return lua.table_from([to_lua(v) for v in o])
+            return self.lua.table_from([self.to_lua(v) for v in o])
         return o
 
-    def from_lua(t):
-        if lua51.lua_type(t) != "table":
+    def from_lua(self, t):
+        if self.lua51.lua_type(t) != "table":
             return t
         keys = list(t.keys())
         if keys and all(isinstance(k, int) for k in keys):
-            return [from_lua(t[i]) for i in range(1, len(keys) + 1)]
-        return {k: from_lua(v) for k, v in t.items()} if keys else []
+            return [self.from_lua(t[i]) for i in range(1, len(keys) + 1)]
+        return {k: self.from_lua(v) for k, v in t.items()} if keys else []
 
-    frame = {"n": 0}
-    printed = []
-    names = sorted({s["unit"] for s in plan["steps"]} | {"corcom", "armcom", "armmex", "cor_hat_halloween_mask"})
-    def_id = {u: i + 1 for i, u in enumerate(names)}
-    g = lua.globals()
-    lua.execute("""
-        function _mock(print_fn, add_action)
-          local font = {}
-          function font:Begin() end
-          function font:End() end
-          function font:SetTextColor() end
-          function font:Print(s) print_fn(s) end
-          function font:GetTextWidth(s) return #s * 0.5 end
-          local handler = {}
-          function handler:AddAction(name, fn) add_action(name, fn) end
-          function handler:RemoveAction() end
-          return font, handler
-        end
-    """)
-    actions = {}
-    font, handler = g._mock(printed.append, actions.__setitem__)
-    g.widgetHandler = handler
-    g.Json = to_lua({})
-    g.Json.decode = lambda s: to_lua(json.loads(s))
-    g.Json.encode = lambda t: json.dumps(from_lua(t))
-    g.UnitDefs = to_lua({i: {"name": u} for u, i in def_id.items()})
-    g.Game = to_lua({"mapName": "Test Map"})
-    g.WG = to_lua({"fonts": {}})
-    g.WG.fonts.getFont = lambda *a: font
-    g.VFS = to_lua({})
-    g.VFS.LoadFile = lambda p: open(p).read() if os.path.exists(p) else None
-    g.gl = to_lua({})
-    g.gl.Color = g.gl.Rect = lambda *a: None
-    spring = to_lua({})
-    spring.GetGameSeconds = lambda: frame["n"] / 30
-    spring.GetGameFrame = lambda: frame["n"]
-    spring.GetTeamResources = lambda team, kind: (500.0, 1000.0, 0.0, 5.0, 0.0)
-    spring.GetUnitIsBeingBuilt = lambda uid: (True, 0.5)
-    spring.GetViewGeometry = lambda: (1920, 1080)
-    spring.GetConfigFloat = lambda key, default: 1.0
-    spring.GetMyTeamID = lambda: 0
-    spring.GetSpectatingState = lambda: False
-    commander = {"name": "corcom"}
-    spring.GetTeamUnits = lambda team: to_lua([1])
-    spring.GetUnitDefID = lambda uid: def_id[commander["name"]]
-    spring.Echo = lambda s: None
-    g.Spring = spring
-    g.widget = to_lua({})
+    def call(self, name, *args):
+        return getattr(self.w, name)(self.w, *args)
 
-    with open(WIDGET, encoding="utf-8") as f:
-        lua.execute(f.read())
-    w = g.widget
-    w.SetConfigData(w, to_lua({"x": 0.02, "y": 0.72}))  # saved by the first version: under the minimap
-    w.Initialize(w)
-    w.DrawScreen(w)
-    assert any("waiting for the first step" in p for p in printed)
+    def select(self, ids):
+        self.selected = list(ids)
+        self.call("SelectionChanged", self.to_lua(list(ids)))
+
+    def draw(self):
+        self.printed.clear()
+        self.call("DrawScreen")
+        return list(self.printed)
+
+
+def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
+    plan = plan_json(run)
+    bar = FakeBar(plan, tmp_path, monkeypatch, extra_units=["cor_hat_halloween_mask"])
+    def_id, w = bar.def_id, bar.w
+    bar.call("SetConfigData", bar.to_lua({"x": 0.02, "y": 0.72}))  # saved by the first version: under the minimap
+    bar.call("Initialize")
+    assert "bind Alt+sc_j buildguide_next" in bar.commands
+    assert any("waiting for the first step" in p for p in bar.draw())
     # The old position is dropped: the panel starts at the top right, and its title can be dragged.
-    assert not w.MousePress(w, 100, 770, 1)
-    assert w.MousePress(w, 1890, 915, 1)
-    w.MouseMove(w, 1790, 865, -100, -50)
-    w.MouseRelease(w)
-    saved = from_lua(w.GetConfigData(w))
+    assert not bar.call("MousePress", 100, 770, 1)
+    assert bar.call("MousePress", 1890, 915, 1)
+    bar.call("MouseMove", 1790, 865, -100, -50)
+    bar.call("MouseRelease")
+    saved = bar.from_lua(bar.call("GetConfigData"))
     assert saved["version"] == 2 and saved["x"] < 0.95 and saved["y"] == pytest.approx(0.86 - 50 / 1080, abs=0.01)
-    actions["buildguide_reset"]("buildguide_reset")
-    assert "x" not in from_lua(w.GetConfigData(w))
+    bar.actions["buildguide_reset"]("buildguide_reset")
+    assert "x" not in bar.from_lua(bar.call("GetConfigData"))
 
     # Play the plan 3 s late; the first try of step 2 is cancelled and restarted.
     events = sorted([(s["start"] + 3, 0, k) for k, s in enumerate(plan["steps"])]
                     + [(s["finish"] + 3, 1, k) for k, s in enumerate(plan["steps"])])
     unit_ids, next_id, cancelled = {}, 100, False
-    w.UnitCreated(w, 1, def_id["corcom"], 0)  # the commander spawns at frame 0: ignored
-    frame["n"] = 1
-    w.UnitCreated(w, 2, def_id["cor_hat_halloween_mask"], 0)  # cosmetics have no builder: ignored
-    frame["n"] = 0
+    bar.call("UnitCreated", 1, def_id["corcom"], 0)  # the commander spawns at frame 0: ignored
+    bar.frame = 1
+    bar.call("UnitCreated", 2, def_id["cor_hat_halloween_mask"], 0)  # cosmetics have no builder: ignored
+    bar.frame = 0
     end = max(s["finish"] for s in plan["steps"]) + 6
     i = 0
-    while frame["n"] < end * 30:
-        frame["n"] += 1
-        while i < len(events) and events[i][0] <= frame["n"] / 30:
+    while bar.frame < end * 30:
+        bar.frame += 1
+        while i < len(events) and events[i][0] <= bar.frame / 30:
             _, finish, k = events[i]
             i += 1
             unit = def_id[plan["steps"][k]["unit"]]
             if finish:
-                w.UnitFinished(w, unit_ids[k], unit, 0)
+                bar.call("UnitFinished", unit_ids[k], unit, 0)
                 continue
             if k == 1 and not cancelled:
                 next_id += 1
-                w.UnitCreated(w, next_id, unit, 0, 1)
-                w.UnitDestroyed(w, next_id)
+                bar.call("UnitCreated", next_id, unit, 0, 1)
+                bar.call("UnitDestroyed", next_id)
                 cancelled = True
             next_id += 1
             unit_ids[k] = next_id
-            w.UnitCreated(w, next_id, unit, 0, 1)
-        w.GameFrame(w, frame["n"])
-    printed.clear()
-    w.DrawScreen(w)
-    assert any("Goal reached at" in p and "(+3s)" in p for p in printed)
-    w.Shutdown(w)
+            bar.call("UnitCreated", next_id, unit, 0, 1)
+        bar.call("GameFrame", bar.frame)
+    assert any("Goal reached at" in p and "(+3s)" in p for p in bar.draw())
+    bar.call("Shutdown")
+    assert "unbind Alt+sc_j buildguide_next" in bar.commands
 
-    logs = list(config.glob("build_guide_log*.json"))
+    logs = list(bar.config.glob("build_guide_log*.json"))
     assert len(logs) == 1
     log = json.loads(logs[0].read_text())
     assert log["format"] == "bar-build-guide-log" and log["map"] == "Test Map"
@@ -208,14 +247,75 @@ def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
     assert log["extra"] == [] and log["commander"] == "corcom"
     assert log["plan_targets"] == GOAL.targets
     assert log["goal_reached"] == pytest.approx(plan["finish_time"] + 3, abs=0.05)
+    assert log["resources"] and log["plan_resources"] == plan["resources"]
 
     # Playing another faction: the panel says so.
-    commander["name"] = "armcom"
-    w.Initialize(w)  # fresh plan state, as after a restart
-    frame["n"] = 1
-    w.GameFrame(w, 1)
-    w.UnitCreated(w, 900, def_id["armmex"], 0, 1)
-    printed.clear()
-    w.DrawScreen(w)
-    assert any("This plan is for Cortex, you are playing Armada" in p for p in printed)
-    assert log["resources"] and log["plan_resources"] == plan["resources"]
+    bar.commander = "armcom"
+    bar.call("Initialize")  # fresh plan state, as after a restart
+    bar.frame = 1
+    bar.call("GameFrame", 1)
+    bar.call("UnitCreated", 900, def_id["armmex"], 0, 1)
+    assert any("This plan is for Cortex, you are playing Armada" in p for p in bar.draw())
+
+
+def test_place_next_picks_the_next_building_but_never_orders(run, tmp_path, monkeypatch):
+    plan = plan_json(run)
+    bar = FakeBar(plan, tmp_path, monkeypatch)
+    def_id = bar.def_id
+    bar.call("Initialize")
+    bar.frame = 1
+    bar.call("GameFrame", 1)  # finds the commander (unit 1)
+    first = plan["steps"][0]
+    assert first["builder_unit"] == "corcom"
+    assert any("Alt+J: place " + first["display"] + " with Commander" in p for p in bar.draw())
+
+    # Alt+J with nothing selected: selects the commander, then picks the building once the
+    # build menu has caught up with the selection.
+    bar.actions["buildguide_next"]("buildguide_next")
+    assert bar.selected == [1] and bar.picked == []
+    bar.call("Update")
+    assert bar.picked == [def_id[first["unit"]]]
+
+    # The player places it: the step is taken, so the next pick is the commander's next step.
+    bar.call("UnitCommand", 1, def_id["corcom"], 0, -def_id[first["unit"]])
+    bar.queue[1] = 1
+    bar.actions["buildguide_next"]("buildguide_next")
+    bar.call("Update")
+    second = next(s for s in plan["steps"][1:] if s["builder_unit"] == "corcom")
+    assert bar.picked[-1] == def_id[second["unit"]]
+
+    # Auto-pick: the selected commander goes idle without building it (order dropped): picked again.
+    bar.picked.clear()
+    bar.queue[1] = 0
+    bar.call("UnitIdle", 1, def_id["corcom"], 0)
+    bar.call("Update")
+    assert bar.picked == [def_id[first["unit"]]]
+    # ... but not while the commander still has orders queued.
+    bar.picked.clear()
+    bar.queue[1] = 2
+    bar.call("UnitIdle", 1, def_id["corcom"], 0)
+    bar.call("Update")
+    assert bar.picked == []
+
+    # Play every commander step so the Bot Lab exists; its step only selects the factory.
+    bar.queue[1] = 0
+    next_id = 100
+    for s in plan["steps"]:
+        if s["builder_unit"] != "corcom":
+            break
+        next_id += 1
+        bar.unit_def[next_id] = def_id[s["unit"]]
+        bar.call("UnitCreated", next_id, def_id[s["unit"]], 0, 1)
+        bar.call("UnitFinished", next_id, def_id[s["unit"]], 0)
+    factory_step = next(s for s in plan["steps"] if s["builder_unit"] == "corlab")
+    lab = next(uid for uid, d in bar.unit_def.items() if d == def_id["corlab"])
+    assert any(f"select Bot Lab 1, then queue {factory_step['display']}" in p for p in bar.draw())
+    bar.picked.clear()
+    bar.selected = []
+    bar.actions["buildguide_next"]("buildguide_next")
+    bar.call("Update")
+    assert bar.selected == [lab] and bar.picked == []
+
+    # Off switch for auto-pick, kept in the config.
+    bar.actions["buildguide_autopick"]("buildguide_autopick")
+    assert bar.from_lua(bar.call("GetConfigData"))["autopick"] is False

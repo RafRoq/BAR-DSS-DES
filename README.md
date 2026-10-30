@@ -58,7 +58,7 @@ The charts use [ECharts](https://echarts.apache.org) 5.5.1 (Apache-2.0), include
 ## In-game guide
 
 `widget/gui_build_guide.lua` is a BAR widget that guides you through a planned build while you play. It
-only displays; it never gives orders.
+never gives orders itself, so it also works in lobbies that turn off "unit control" widgets.
 
 1. **Send a build to BAR.** In the web UI, select a run, open **In-game**, and press **Send to BAR**. This
    copies the widget to `LuaUI/Widgets/` and the plan to `LuaUI/Config/build_guide_plan.json` in your BAR
@@ -72,6 +72,13 @@ only displays; it never gives orders.
      builders and planned times.
    - It also shows how many seconds ahead or behind plan you are, and your metal and energy next to the
      plan's.
+   - **Place next (Alt+J).** Selects the builder of the next step and picks that building in the build
+     menu, so your next click places it. You still choose where it goes; hold Shift to queue it behind the
+     builder's current work.
+   - **Auto-pick.** With a planned builder selected and idle, its next building is picked by itself.
+     Turn it off with `/luaui buildguide_autopick`.
+   - **Factory steps** only select the factory. Clicking a factory's build button queues the unit at once,
+     so that click is left to you.
    - It starts at the top right, under the top bar. Drag it by its title; `/luaui buildguide_reset` puts it
      back. `/luaui buildguide_reload` reloads the plan; `/luaui buildguide_toggle` hides it.
 3. **Compare.** The widget logs every game to `LuaUI/Config/build_guide_log_<date>.json`: when each step

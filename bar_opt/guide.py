@@ -21,19 +21,23 @@ PLAN_FILE = "build_guide_plan.json"
 SAMPLE_EVERY = 5.0  # seconds between resource samples
 
 
+def builder_refs(run: dict) -> dict[int, tuple[str, int]]:
+    """(unit name, n) by builder id: the nth builder of that unit to be finished, from 1."""
+    seen: dict[str, int] = {}
+    out = {}
+    for b in sorted(run["builders"], key=lambda b: (b["spawn"], b["id"])):
+        seen[b["unit"]] = seen.get(b["unit"], 0) + 1
+        out[b["id"]] = (b["unit"], seen[b["unit"]])
+    return out
+
+
 def builder_labels(run: dict) -> dict[int, str]:
     """"Commander", "Construction Bot 1", "Construction Bot 2", ... by builder id."""
     commander = run["goal"]["config"]["commander"]
-    seen: dict[str, int] = {}
     out = {}
-    for b in sorted(run["builders"], key=lambda b: b["id"]):
-        unit = b["unit"]
+    for b, (unit, n) in builder_refs(run).items():
         display = run["units"].get(unit, {}).get("display") or unit
-        if unit == commander:
-            out[b["id"]] = "Commander"
-            continue
-        seen[unit] = seen.get(unit, 0) + 1
-        out[b["id"]] = f"{display} {seen[unit]}"
+        out[b] = "Commander" if unit == commander else f"{display} {n}"
     return out
 
 
@@ -43,6 +47,7 @@ def plan_json(run: dict) -> dict:
     `occurrence` is how many of that unit have been started so far, counting this one: the
     widget matches the nth unit of a kind you start in-game to the step with occurrence n."""
     labels = builder_labels(run)
+    refs = builder_refs(run)
     units = run["units"]
     started: dict[str, int] = {}
     steps = []
@@ -56,6 +61,9 @@ def plan_json(run: dict) -> dict:
             "display": units.get(unit, {}).get("display") or unit,
             "occurrence": started[unit],
             "builder": labels.get(owner, f"builder {owner}"),
+            # which of your units builds it, for the widget's place-next key
+            "builder_unit": refs[owner][0] if owner in refs else None,
+            "builder_n": refs[owner][1] if owner in refs else None,
             "helpers": [{"builder": labels.get(b, f"builder {b}"), "t": t} for t, b in helpers],
             "start": job["start"],
             "finish": job["end"],

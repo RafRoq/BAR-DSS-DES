@@ -202,9 +202,10 @@
             <ol class="ingame-howto">
               <li><strong>Send to BAR</strong> copies the widget to <code>LuaUI/Widgets/</code> and the plan to <code>LuaUI/Config/build_guide_plan.json</code> in your BAR data folder. Sending another run replaces the plan.</li>
               <li>In game, enable <strong>Build Order Guide</strong> in the widget list (F11). Drag the panel by its title.</li>
+              <li>Press <strong>Alt+J</strong> to select the next builder with its next building ready to place: you click where it goes (Shift queues it). With a planned builder selected and idle, the next building is picked by itself.</li>
               <li>If you send a new plan while BAR is running, type <code>/luaui buildguide_reload</code>.</li>
             </ol>
-            <p class="hint">The panel shows the next steps, who builds them, the planned times and how far ahead or behind you are. It only displays; it never gives orders.</p>
+            <p class="hint">The panel shows the next steps, who builds them, the planned times and how far ahead or behind you are. It never gives orders itself, so it works in lobbies that turn off unit control widgets.</p>
           </section>
           <section class="ingame-card">
             <h3>2. Compare plan and game</h3>

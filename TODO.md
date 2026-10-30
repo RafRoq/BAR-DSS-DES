@@ -58,8 +58,22 @@ What the first games showed:
 - The gap came from walking and giving orders: about 1 s per base building, 10–60 s per mex.
 - Wind varies between about 3 and 20 on Supreme Isthmus. The companion plans with the average seen so far.
 
+## Army against tech (2026-10-30)
+
+- `analyze_tech.py`, `analyze_payback.py`, `analyze_army_cost.py` (see README).
+- Cortex, 3000-metal armies: the most robust T1 army beats a typical T2 army (+0.5) but needs 1.3–1.7x the
+  metal to beat the strongest one; the most robust T2 army needs 1.2–1.3x against its strongest counter.
+- Payback: a mex 25 s, wind 224 s (at wind 14.2), moho 114 s, fusion 322 s. 1000 metal of army forgoes
+  about 4.5 metal/s of income.
+- Army cost: each 100 metal of army by 3:00–5:00 delays the T2 vehicle plant by 8–12 s (about what that
+  metal is worth at 11 metal/s of income).
+
 ## Next
 
+- **Long goals are unreliable.** For the T2 vehicle plant plus a fusion reactor (about 10:00), the
+  optimizer's runs end up to 245 s apart even with 60 s of polishing and the best of 3 seeds, so
+  `analyze_army_cost.py --target coravp,corfus` is noise. Fix before planning later tech phases: likely the
+  remaining-time estimate or the economy caps for T2. Measure with `benchmark.py` on that goal.
 - **Try the companion in a real game.** Compare its ETA with the outcome, and check that the plan doesn't
   jump around while it's being followed.
 - **Validate the unit analysis in game.** Sandbox fights (`/cheat`, `/give`) between the top picks, logged

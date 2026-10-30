@@ -48,14 +48,14 @@ def run(task: dict) -> dict:
     goal = Goal(name="army cost", targets=dict(targets), max_time=task["max_time"],
                 config=EconConfig(mex_spots=task["mex_spots"]),
                 milestones=(Milestone(at=task["deadline"], units=counts),) if counts else ())
-    search = SearchConfig(improve_seconds=task["improve"])
+    search = SearchConfig(improve_seconds=task["improve"], seed=task["seed"])
     result = optimize(goal, search)
     if result is None:
         return {**task, "reached": False}
     best = replay_ops(goal, result.ops)
     ev = goal.evaluate(best)
     tech = max(best.reached[u][n - 1] for u, n in targets.items())
-    return {**task, "reached": ev["reached"], "tech_time": tech, "finish_time": ev["finish_time"],
+    return {**task, "reached": ev["reached"], "cost": ev["cost"], "tech_time": tech, "finish_time": ev["finish_time"],
             "army_time": ev["milestone_times"][0] if counts else None, "late": ev["milestones_late"],
             "stall_seconds": ev["stall_seconds"], "metal_income": best.metal_income(),
             "energy_income": best.energy_income(),
@@ -71,6 +71,8 @@ def main():
     parser.add_argument("--mex-spots", type=int, default=EconConfig().mex_spots)
     parser.add_argument("--improve", type=float, default=30.0,
                         help="seconds of polishing per optimizer run; long goals (a fusion at 10:00) need about 60")
+    parser.add_argument("--repeats", type=int, default=1,
+                        help="optimizer runs per case with different seeds, keeping the best; 3 steadies long goals")
     parser.add_argument("--max-time", type=float, default=1500.0)
     parser.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     parser.add_argument("--out", default="results/economy")
@@ -92,13 +94,18 @@ def main():
     deadlines = [parse_time(d.strip()) for d in args.deadlines.split(",")]
 
     base = {"targets": targets, "mex_spots": args.mex_spots, "improve": args.improve, "max_time": args.max_time}
-    tasks = [{**base, "size": 0.0, "deadline": None, "counts": {}}]
-    tasks += [{**base, "size": s, "deadline": d, "counts": army_counts(mix, s)}
+    cases = [{**base, "size": 0.0, "deadline": None, "counts": {}}]
+    cases += [{**base, "size": s, "deadline": d, "counts": army_counts(mix, s)}
               for d in deadlines for s in sizes if s > 0]
+    tasks = [{**case, "case": i, "seed": seed} for i, case in enumerate(cases) for seed in range(args.repeats)]
     started = time.perf_counter()
     with ProcessPoolExecutor(min(args.workers, len(tasks))) as pool:
-        results = list(pool.map(run, tasks))
+        runs = list(pool.map(run, tasks))
     took = time.perf_counter() - started
+    # the best of each case's runs: a search that took a poor path only ever comes out slower
+    results = [min((r for r in runs if r["case"] == i), key=lambda r: (not r.get("reached"), r.get("cost", 0.0)))
+               for i in range(len(cases))]
+    baseline = [r["tech_time"] for r in runs if r["case"] == 0 and r.get("reached")]
 
     none = results[0]
     target_text = " + ".join(f"{n}x {units[u].display_name}" if n > 1 else units[u].display_name
@@ -111,6 +118,9 @@ def main():
              "rebuilding losses costs like a bigger army.", "",
              f"**With no army: {target_text} at {clock(none.get('tech_time'))}**, income then "
              f"{none.get('metal_income', 0):.1f} metal/s and {none.get('energy_income', 0):.0f} energy/s.", ""]
+    if len(baseline) > 1:
+        lines += [f"Each case is the best of {args.repeats} optimizer runs. The runs with no army ended "
+                  f"{max(baseline) - min(baseline):.0f} s apart: smaller differences between cases are noise.", ""]
     for d in deadlines:
         lines += [f"## Army by {clock(d)}", "",
                   "| Army (metal) | Units | Tech at | Later by | Per 100 metal | Army ready | Late | "
@@ -132,7 +142,7 @@ def main():
               "**Late** is how far the army missed its deadline (the optimizer trades 1 s of tech for 0.5 s "
               "of lateness, see the `late` weight). The optimizer polishes each case for "
               f"{args.improve:g} s, so differences of a few seconds are noise.", "",
-              f"_{len(tasks)} optimizer runs in {took:.0f} s._"]
+              f"_{len(tasks)} optimizer runs ({len(cases)} cases) in {took:.0f} s._"]
 
     os.makedirs(args.out, exist_ok=True)
     stem = os.path.join(args.out, "army_cost_" + "+".join(targets))

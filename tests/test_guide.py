@@ -193,7 +193,7 @@ def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
     def_id, w = bar.def_id, bar.w
     bar.call("SetConfigData", bar.to_lua({"x": 0.02, "y": 0.72}))  # saved by the first version: under the minimap
     bar.call("Initialize")
-    assert "bind Alt+sc_j buildguide_next" in bar.commands
+    assert "bind sc_mouse4 buildguide_next" in bar.commands
     assert any("waiting for the first step" in p for p in bar.draw())
     # The old position is dropped: the panel starts at the top right, and its title can be dragged.
     assert not bar.call("MousePress", 100, 770, 1)
@@ -235,7 +235,7 @@ def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
         bar.call("GameFrame", bar.frame)
     assert any("Goal reached at" in p and "(+3s)" in p for p in bar.draw())
     bar.call("Shutdown")
-    assert "unbind Alt+sc_j buildguide_next" in bar.commands
+    assert "unbind sc_mouse4 buildguide_next" in bar.commands
 
     logs = list(bar.config.glob("build_guide_log*.json"))
     assert len(logs) == 1
@@ -267,9 +267,9 @@ def test_place_next_picks_the_next_building_but_never_orders(run, tmp_path, monk
     bar.call("GameFrame", 1)  # finds the commander (unit 1)
     first = plan["steps"][0]
     assert first["builder_unit"] == "corcom"
-    assert any("Alt+J: place " + first["display"] + " with Commander" in p for p in bar.draw())
+    assert any("Mouse 4: place " + first["display"] + " with Commander" in p for p in bar.draw())
 
-    # Alt+J with nothing selected: selects the commander, then picks the building once the
+    # Mouse 4 with nothing selected: selects the commander, then picks the building once the
     # build menu has caught up with the selection.
     bar.actions["buildguide_next"]("buildguide_next")
     assert bar.selected == [1] and bar.picked == []
@@ -319,3 +319,9 @@ def test_place_next_picks_the_next_building_but_never_orders(run, tmp_path, monk
     # Off switch for auto-pick, kept in the config.
     bar.actions["buildguide_autopick"]("buildguide_autopick")
     assert bar.from_lua(bar.call("GetConfigData"))["autopick"] is False
+
+    # Moving place-next to another key: rebinds and is remembered.
+    bar.actions["buildguide_key"]("buildguide_key", "Ctrl+sc_t")
+    assert bar.commands[-2:] == ["unbind sc_mouse4 buildguide_next", "bind Ctrl+sc_t buildguide_next"]
+    assert bar.from_lua(bar.call("GetConfigData"))["key"] == "Ctrl+sc_t"
+    assert any("Ctrl+T: select Bot Lab 1" in p for p in bar.draw())

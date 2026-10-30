@@ -3,7 +3,7 @@ local widget = widget ---@type Widget
 -- Build Order Guide: shows the next steps of a build order planned by the BAR build order
 -- optimizer, and how far ahead or behind plan you are.
 --
--- Place next (Alt+J): selects the builder of the next step and picks its building in the build
+-- Place next (Mouse 4, the back thumb button): selects the builder of the next step and picks its building in the build
 -- menu, so your next click places it (hold Shift to queue it behind current work). With a
 -- planned builder selected and idle, its next building is picked by itself (auto-pick, toggle
 -- with /luaui buildguide_autopick). Factory steps only select the factory: you click the unit.
@@ -18,7 +18,8 @@ local widget = widget ---@type Widget
 --
 -- The panel starts at the top right, under the top bar; drag it by its title. Commands:
 -- /luaui buildguide_reload (re-read the plan), /luaui buildguide_toggle (hide or show),
--- /luaui buildguide_reset (back to the default position), /luaui buildguide_next (= Alt+J).
+-- /luaui buildguide_reset (back to the default position), /luaui buildguide_next (= Mouse 4),
+-- /luaui buildguide_key <key> (move place-next to another key, e.g. sc_mouse5 or Ctrl+sc_t; remembered).
 
 function widget:GetInfo()
 	return {
@@ -39,7 +40,13 @@ local SAMPLE_EVERY = 5 -- seconds between resource samples
 local SAVE_EVERY = 30 -- seconds between log writes (also written on every finished step)
 local ROWS_BEFORE, ROWS_AFTER = 2, 6 -- steps shown around the next one
 local ON_PLAN = 2 -- seconds of difference still shown as "on plan"
-local NEXT_KEY, NEXT_KEY_LABEL = "Alt+sc_j", "Alt+J" -- free in BAR's default keybindings
+local DEFAULT_KEY = "sc_mouse4" -- the back thumb button: free in BAR's keybindings (Mouse 5 selects squads)
+local nextKey = DEFAULT_KEY
+
+-- "sc_mouse4" -> "Mouse 4", "Ctrl+sc_t" -> "Ctrl+T"
+local function keyLabel(key)
+	return (key:gsub("sc_mouse(%d)", "Mouse %1"):gsub("sc_(%w)", string.upper))
+end
 
 local spGetGameSeconds = Spring.GetGameSeconds
 local spGetGameFrame = Spring.GetGameFrame
@@ -374,9 +381,9 @@ local function nextHint()
 		return string.format("Next: %s by %s (not built yet)", s.display, s.builder)
 	end
 	if isFactory(unitID) then
-		return string.format("%s: select %s, then queue %s", NEXT_KEY_LABEL, s.builder, s.display)
+		return string.format("%s: select %s, then queue %s", keyLabel(nextKey), s.builder, s.display)
 	end
-	return string.format("%s: place %s with %s%s", NEXT_KEY_LABEL, s.display, s.builder, autoPick and "  (auto-pick on)" or "")
+	return string.format("%s: place %s with %s%s", keyLabel(nextKey), s.display, s.builder, autoPick and "  (auto-pick on)" or "")
 end
 
 local function wrongFaction()
@@ -615,7 +622,8 @@ end
 -- ------------------------------------------------------------------ setup
 
 function widget:GetConfigData()
-	return { version = CONFIG_VERSION, x = pos and pos.x, y = pos and pos.y, hidden = hidden, autopick = autoPick }
+	return { version = CONFIG_VERSION, x = pos and pos.x, y = pos and pos.y, hidden = hidden, autopick = autoPick,
+		key = nextKey }
 end
 
 function widget:SetConfigData(data)
@@ -624,6 +632,9 @@ function widget:SetConfigData(data)
 	end
 	hidden = data.hidden == true
 	autoPick = data.autopick ~= false
+	if type(data.key) == "string" and data.key ~= "" then
+		nextKey = data.key
+	end
 end
 
 function widget:Initialize()
@@ -648,7 +659,19 @@ function widget:Initialize()
 		Spring.Echo("Build Order Guide: auto-pick " .. (autoPick and "on" or "off"))
 		return true
 	end, nil, "t")
-	Spring.SendCommands("bind " .. NEXT_KEY .. " buildguide_next")
+	widgetHandler:AddAction("buildguide_key", function(_, line)
+		local key = line and line:match("^%s*(%S+)")
+		if not key then
+			Spring.Echo("Build Order Guide: place-next is on " .. keyLabel(nextKey) .. " (" .. nextKey .. ")")
+			return true
+		end
+		Spring.SendCommands("unbind " .. nextKey .. " buildguide_next")
+		nextKey = key
+		Spring.SendCommands("bind " .. nextKey .. " buildguide_next")
+		Spring.Echo("Build Order Guide: place-next moved to " .. keyLabel(nextKey))
+		return true
+	end, nil, "t")
+	Spring.SendCommands("bind " .. nextKey .. " buildguide_next")
 end
 
 function widget:Shutdown()
@@ -658,5 +681,6 @@ function widget:Shutdown()
 	widgetHandler:RemoveAction("buildguide_reset")
 	widgetHandler:RemoveAction("buildguide_next")
 	widgetHandler:RemoveAction("buildguide_autopick")
-	Spring.SendCommands("unbind " .. NEXT_KEY .. " buildguide_next")
+	widgetHandler:RemoveAction("buildguide_key")
+	Spring.SendCommands("unbind " .. nextKey .. " buildguide_next")
 end

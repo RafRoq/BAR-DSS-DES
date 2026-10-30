@@ -72,9 +72,12 @@ never gives orders itself, so it also works in lobbies that turn off "unit contr
      builders and planned times.
    - It also shows how many seconds ahead or behind plan you are, and your metal and energy next to the
      plan's.
-   - **Place next (Alt+J).** Selects the builder of the next step and picks that building in the build
-     menu, so your next click places it. You still choose where it goes; hold Shift to queue it behind the
-     builder's current work.
+   - **Place next (Mouse 4, the back thumb button).** Selects the builder of the next step and picks that
+     building in the build menu, so your next click places it. You still choose where it goes; hold Shift
+     to queue it behind the builder's current work.
+     - Mouse 4 is free in BAR's keybindings; Mouse 5 already selects squads.
+     - `/luaui buildguide_key <key>` moves it to another key and remembers it, e.g. `sc_mouse5` or
+       `Ctrl+sc_t`.
    - **Auto-pick.** With a planned builder selected and idle, its next building is picked by itself.
      Turn it off with `/luaui buildguide_autopick`.
    - **Factory steps** only select the factory. Clicking a factory's build button queues the unit at once,

@@ -101,7 +101,7 @@ def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
 
     frame = {"n": 0}
     printed = []
-    names = sorted({s["unit"] for s in plan["steps"]} | {"corcom"})
+    names = sorted({s["unit"] for s in plan["steps"]} | {"corcom", "armcom", "armmex", "cor_hat_halloween_mask"})
     def_id = {u: i + 1 for i, u in enumerate(names)}
     g = lua.globals()
     lua.execute("""
@@ -141,6 +141,9 @@ def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
     spring.GetConfigFloat = lambda key, default: 1.0
     spring.GetMyTeamID = lambda: 0
     spring.GetSpectatingState = lambda: False
+    commander = {"name": "corcom"}
+    spring.GetTeamUnits = lambda team: to_lua([1])
+    spring.GetUnitDefID = lambda uid: def_id[commander["name"]]
     spring.Echo = lambda s: None
     g.Spring = spring
     g.widget = to_lua({})
@@ -167,6 +170,9 @@ def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
                     + [(s["finish"] + 3, 1, k) for k, s in enumerate(plan["steps"])])
     unit_ids, next_id, cancelled = {}, 100, False
     w.UnitCreated(w, 1, def_id["corcom"], 0)  # the commander spawns at frame 0: ignored
+    frame["n"] = 1
+    w.UnitCreated(w, 2, def_id["cor_hat_halloween_mask"], 0)  # cosmetics have no builder: ignored
+    frame["n"] = 0
     end = max(s["finish"] for s in plan["steps"]) + 6
     i = 0
     while frame["n"] < end * 30:
@@ -180,12 +186,12 @@ def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
                 continue
             if k == 1 and not cancelled:
                 next_id += 1
-                w.UnitCreated(w, next_id, unit, 0)
+                w.UnitCreated(w, next_id, unit, 0, 1)
                 w.UnitDestroyed(w, next_id)
                 cancelled = True
             next_id += 1
             unit_ids[k] = next_id
-            w.UnitCreated(w, next_id, unit, 0)
+            w.UnitCreated(w, next_id, unit, 0, 1)
         w.GameFrame(w, frame["n"])
     printed.clear()
     w.DrawScreen(w)
@@ -199,4 +205,15 @@ def test_widget_follows_a_game_and_logs_it(run, tmp_path, monkeypatch):
     delays = [s["actual_start"] - s["planned_start"] for s in log["steps"]]
     assert all(d == pytest.approx(3, abs=0.05) for d in delays)
     assert all(s.get("actual_finish") for s in log["steps"])
+    assert log["extra"] == [] and log["commander"] == "corcom"
+
+    # Playing another faction: the panel says so.
+    commander["name"] = "armcom"
+    w.Initialize(w)  # fresh plan state, as after a restart
+    frame["n"] = 1
+    w.GameFrame(w, 1)
+    w.UnitCreated(w, 900, def_id["armmex"], 0, 1)
+    printed.clear()
+    w.DrawScreen(w)
+    assert any("This plan is for Cortex, you are playing Armada" in p for p in printed)
     assert log["resources"] and log["plan_resources"] == plan["resources"]

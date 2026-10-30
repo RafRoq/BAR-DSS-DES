@@ -46,6 +46,9 @@ local stepOfUnit = {} -- unitID -> step
 local extra = {} -- units built that are not in the plan
 local samples = {}
 local myTeamID = Spring.GetMyTeamID()
+-- Commander -> faction, to tell the player when the plan is for another faction.
+local FACTIONS = { armcom = "Armada", corcom = "Cortex", legcom = "Legion" }
+local myCommander -- unit name of our commander, found on the first game frame
 local hidden = false
 local lastSample, lastSave = -SAMPLE_EVERY, 0
 
@@ -82,6 +85,7 @@ end
 
 local function loadPlan()
 	plan, problem, steps, stepOfUnit, extra, samples, logFile = nil, nil, {}, {}, {}, {}, nil
+	myCommander = nil
 	if not Json then
 		problem = "Json library not available"
 		return
@@ -162,6 +166,8 @@ local function writeLog()
 		version = 1,
 		plan_name = plan.name,
 		plan_label = plan.label,
+		plan_commander = plan.commander,
+		commander = myCommander,
 		map = Game and Game.mapName,
 		game_version = Game and Game.gameVersion,
 		recorded = recorded,
@@ -193,8 +199,25 @@ local function stepFor(unitName)
 	end
 end
 
-function widget:UnitCreated(unitID, unitDefID, unitTeam)
-	if unitTeam ~= myTeamID or not plan or spGetGameFrame() <= 0 then
+local function findCommander()
+	for _, unitID in ipairs(Spring.GetTeamUnits(myTeamID) or {}) do
+		local def = UnitDefs[Spring.GetUnitDefID(unitID)]
+		if def and FACTIONS[def.name] then
+			return def.name
+		end
+	end
+end
+
+local function wrongFaction()
+	if plan and myCommander and plan.commander and myCommander ~= plan.commander then
+		return string.format("This plan is for %s, you are playing %s",
+			FACTIONS[plan.commander] or plan.commander, FACTIONS[myCommander] or myCommander)
+	end
+end
+
+function widget:UnitCreated(unitID, unitDefID, unitTeam, builderID)
+	-- Units nobody built (the starting commander, cosmetics) are not part of the build.
+	if unitTeam ~= myTeamID or not plan or spGetGameFrame() <= 0 or not builderID then
 		return
 	end
 	local name = UnitDefs[unitDefID] and UnitDefs[unitDefID].name
@@ -228,6 +251,7 @@ function widget:GameFrame(frame)
 	if not plan then
 		return
 	end
+	myCommander = myCommander or findCommander()
 	local t = now()
 	if t - lastSample >= SAMPLE_EVERY then
 		lastSample = t
@@ -293,6 +317,10 @@ function widget:DrawScreen()
 		local late = d and d >= ON_PLAN
 		add(string.format("%s   %s   %s", plan.name or "Build guide", clock(t), status),
 			late and 1 or 0.6, late and 0.6 or 1, late and 0.4 or 0.6)
+		local mismatch = wrongFaction()
+		if mismatch then
+			add(mismatch .. ": your units will not match its steps.", 1, 0.45, 0.4)
+		end
 		local pr = planResources(t)
 		if pr then
 			local m = spGetTeamResources(myTeamID, "metal") or 0
